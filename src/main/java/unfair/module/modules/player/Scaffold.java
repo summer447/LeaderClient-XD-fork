@@ -2,17 +2,16 @@ package unfair.module.modules.player;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.play.client.C03PacketPlayer;
 import net.minecraft.network.play.client.C0APacketAnimation;
 import net.minecraft.potion.Potion;
 import net.minecraft.util.*;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.WorldSettings.GameType;
 import unfair.Unfair;
-import unfair.enums.BlinkModules;
 import unfair.event.EventTarget;
 import unfair.event.types.EventType;
 import unfair.event.types.Priority;
@@ -86,6 +85,7 @@ public class Scaffold extends Module {
     private int towerTicks = 0;
     private double lastTowerY = 0.0;
     private int placeDelayCounter = 0;
+    private boolean sa;
 
     public Scaffold() {
         super("Scaffold", false);
@@ -247,27 +247,29 @@ public class Scaffold extends Module {
             savedMotionY = mc.thePlayer.motionY;
             savedMotionZ = mc.thePlayer.motionZ;
             this.clutchTickCounter = 0;
-            Unfair.blinkManager.setBlinkState(true, BlinkModules.BLINK);
+            //Unfair.blinkManager.setBlinkState(true, BlinkModules.BLINK);
         }
         if (this.clutchActive) {
             this.clutchTickCounter++;
             boolean isStuckPhase = this.clutchTickCounter % 10 != 0;
             if (isStuckPhase) {
+                sa = true;
                 if (this.clutchTickCounter % 10 == 1){
                     savedMotionX = mc.thePlayer.motionX;
                     savedMotionY = mc.thePlayer.motionY;
                     savedMotionZ = mc.thePlayer.motionZ;
                 }
-                Unfair.blinkManager.setBlinkState(true, BlinkModules.BLINK);
-                KeyBinding.unPressAllKeys();
+                //Unfair.blinkManager.setBlinkState(true, BlinkModules.BLINK);
                 mc.thePlayer.motionX = 0.0;
                 mc.thePlayer.motionY = 0.0;
                 mc.thePlayer.motionZ = 0.0;
             } else {
+                sa = false;
                 mc.thePlayer.motionX = savedMotionX;
                 mc.thePlayer.motionZ = savedMotionZ;
                 mc.thePlayer.motionY = savedMotionY;
-                Unfair.blinkManager.setBlinkState(false, BlinkModules.BLINK);
+                //Unfair.blinkManager.setBlinkState(false, BlinkModules.BLINK);
+                //大狗屎blink
                 BlockData blockData = this.getBlockData();
                 if (blockData != null) {
                     Vec3 hitVec = BlockUtil.getClickVec(blockData.blockPos(), blockData.facing());
@@ -279,7 +281,7 @@ public class Scaffold extends Module {
 
     private void clutchReset() {
         if (this.clutchActive) {
-            Unfair.blinkManager.setBlinkState(false, BlinkModules.BLINK);
+            //Unfair.blinkManager.setBlinkState(false, BlinkModules.BLINK);
             mc.thePlayer.motionX = savedMotionX;
             mc.thePlayer.motionZ = savedMotionZ;
             mc.thePlayer.motionY = savedMotionY;
@@ -562,7 +564,6 @@ public class Scaffold extends Module {
                             this.rotationTick = Math.max(this.rotationTick, 1);
                         }
                     }
-                    // 关键修复：仅在 Telly 模式下执行 towering 相关的自动转头
                     if (tellyMode && this.isTowering() && this.tellyJumpDelayTimer <= 0) {
                         float yawDelta = MathHelper.wrapAngleTo180_float(mc.thePlayer.rotationYaw - event.getYaw());
                         targetYaw = RotationUtil.quantizeAngle(event.getYaw() + yawDelta * RandomUtil.nextFloat(0.98F, 0.99F));
@@ -611,6 +612,12 @@ public class Scaffold extends Module {
             }
         }
     }
+
+    @EventTarget
+    public void onPacket(PacketEvent event) {
+        if (!(event.getPacket() instanceof C03PacketPlayer) && this.clutchActive && !this.sa) event.setCancelled(true);
+    }
+
     @EventTarget
     public void onStrafe(StrafeEvent event) {
         if (this.isEnabled()) {
