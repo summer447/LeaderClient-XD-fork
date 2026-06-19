@@ -1,25 +1,18 @@
 package unfair.module.modules.player;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.settings.KeyBinding;
-import unfair.Unfair;
-import unfair.enums.BlinkModules;
+import net.minecraft.network.play.client.C03PacketPlayer;
 import unfair.event.EventTarget;
-import unfair.events.LivingUpdateEvent;
-import unfair.events.MoveInputEvent;
-import unfair.events.StrafeEvent;
-import unfair.events.UpdateEvent;
+import unfair.events.*;
 import unfair.mixin.IAccessorMinecraft;
 import unfair.module.Module;
-import unfair.property.properties.FloatProperty;
 
 public class Stuck extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
     private double savedMotionX;
     private double savedMotionY;
     private double savedMotionZ;
-
-    private final FloatProperty timer = new FloatProperty("Timer", 1.0F, 0.0F, 1.0F);
+    private boolean fuck;
 
     public Stuck() {
         super("Stuck",false,false);
@@ -35,14 +28,18 @@ public class Stuck extends Module {
     }
 
     @EventTarget
+    public void onPacket(PacketEvent event) {
+        if (!(event.getPacket() instanceof C03PacketPlayer) && fuck) event.setCancelled(true);
+    }
+
+    @EventTarget
     public void onUpdate(UpdateEvent event) {
         if (this.isEnabled()) {
-            Unfair.blinkManager.setBlinkState(true, BlinkModules.BLINK);
-            KeyBinding.unPressAllKeys();
+            //Unfair.blinkManager.setBlinkState(true, BlinkModules.BLINK);
+            fuck = true;
             mc.thePlayer.motionX = 0.0;
             mc.thePlayer.motionZ = 0.0;
             mc.thePlayer.motionY = 0.0;
-            ((IAccessorMinecraft)mc).getTimer().timerSpeed = timer.getValue();
         }
     }
 
@@ -76,7 +73,8 @@ public class Stuck extends Module {
     @Override
     public void onDisabled() {
         if (mc.thePlayer != null) {
-            Unfair.blinkManager.setBlinkState(false, BlinkModules.BLINK);
+            //Unfair.blinkManager.setBlinkState(false, BlinkModules.BLINK);
+            fuck = false;
             mc.thePlayer.motionX = savedMotionX;
             mc.thePlayer.motionZ = savedMotionZ;
             mc.thePlayer.motionY = savedMotionY;
