@@ -51,7 +51,7 @@ public class TargetHUD extends Module {
     private static final DecimalFormat healthFormat = new DecimalFormat("0.0", new DecimalFormatSymbols(Locale.US));
     private static final DecimalFormat diffFormat = new DecimalFormat("+0.0;-0.0", new DecimalFormatSymbols(Locale.US));
 
-    public final ModeProperty style = new ModeProperty("Style", 3, new String[]{"Myau", "Ravenbs Modern", "Ravenbs Legacy", "Leader", "Rounded", "Astolfo", "Exhibition", "Adjust"});
+    public final ModeProperty style = new ModeProperty("Style", 3, new String[]{"Myau", "Ravenbs Modern", "Ravenbs Legacy", "Leader", "Rounded", "Astolfo", "Adjust"});
     public final ModeProperty font = new ModeProperty("Font", 0, new String[]{"Unfair", "Minecraft"});
     public final ModeProperty color = new ModeProperty("Color", 0, new String[]{"Default", "Hud"});
     public final ModeProperty posX = new ModeProperty("Position X", 1, new String[]{"Left", "Middle", "Right"});
@@ -68,7 +68,7 @@ public class TargetHUD extends Module {
     public final BooleanProperty shadow = new BooleanProperty("Shadow", true, () -> this.style.getValue() == 0);
     public final BooleanProperty kaOnly = new BooleanProperty("Ka Only", true);
     public final BooleanProperty chatPreview = new BooleanProperty("Chat Preview", false);
-    public final BooleanProperty armor = new BooleanProperty("Armor", true, () -> this.style.getValue() == 7);
+    public final BooleanProperty armor = new BooleanProperty("Armor", true, () -> this.style.getValue() == 6);
 
     private final TimerUtil lastAttackTimer = new TimerUtil();
     private final TimerUtil animTimer = new TimerUtil();
@@ -224,30 +224,6 @@ public class TargetHUD extends Module {
         GlStateManager.disableBlend();
         GlStateManager.enableAlpha();
         GlStateManager.enableTexture2D();
-    }
-
-    private void drawExhibitionBorderedRect(float x1, float y1, float x2, float y2, float border, int fill, int out) {
-        RenderUtil.drawRect(x1, y1, x2, y2, out);
-        RenderUtil.drawRect(x1 + border, y1 + border, x2 - border, y2 - border, fill);
-    }
-
-    private int getExhibitionColor(int b) {
-        return new Color(b, b, b, 255).getRGB();
-    }
-
-    private int getExhibitionColor(int b, int a) {
-        return new Color(b, b, b, a).getRGB();
-    }
-
-    private Color blendColors(float[] fr, Color[] c, float p) {
-        if (p >= 1) return c[c.length - 1];
-        if (p <= 0) return c[0];
-        int i = 0;
-        while (fr[i + 1] <= p) i++;
-        float f = (p - fr[i]) / (fr[i + 1] - fr[i]);
-        return new Color((int) (c[i].getRed() + (c[i + 1].getRed() - c[i].getRed()) * f),
-                (int) (c[i].getGreen() + (c[i + 1].getGreen() - c[i].getGreen()) * f),
-                (int) (c[i].getBlue() + (c[i + 1].getBlue() - c[i].getBlue()) * f));
     }
 
     private float getTextWidth(String text) {
@@ -672,15 +648,7 @@ public class TargetHUD extends Module {
                 height = 56;
             }
             break;
-            case 6: // Exhibition
-            {
-                String name = TeamUtil.stripName(target);
-                float nameWidth = getTextWidth(name);
-                width = Math.max(120, nameWidth + 50);
-                height = 40;
-            }
-            break;
-            case 7: // Adjust
+            case 6: // Adjust
             {
                 String name = ChatColors.formatColor(String.format("&r%s&r", TeamUtil.stripName(this.target)));
                 List<ItemStack> items = this.collectItems(this.target);
@@ -777,8 +745,6 @@ public class TargetHUD extends Module {
                     } else if (styleMode == 5) {
                         renderAstolfo(heal);
                     } else if (styleMode == 6) {
-                        renderExhibition(heal);
-                    } else if (styleMode == 7) {
                         renderAdjustStyle();
                     }
                 }
@@ -817,38 +783,6 @@ public class TargetHUD extends Module {
             float fillWidth = barWidth * healthPct;
             drawHorizontalGradientRect(48, 42, fillWidth, 7, getAstolfoColor(0).getRGB(), getAstolfoColor((int) (fillWidth * 2)).getRGB());
         }
-        GlStateManager.popMatrix();
-    }
-
-    private void renderExhibition(float heal) {
-        String name = TeamUtil.stripName(target);
-        float nameWidth = getTextWidth(name);
-        float width = Math.max(120, nameWidth + 50);
-        float height = 40;
-        float[] pos = getPosition(width, height);
-        float x = pos[0];
-        float y = pos[1];
-        int bgAlpha = (int) (this.background.getValue() / 100.0F * 255);
-        int bgColor = new Color(0, 0, 0, bgAlpha).getRGB();
-
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(x, y, 0);
-        drawExhibitionBorderedRect(-2.5f, -2.5f, width + 2.5f, height + 2.5f, 0.5f, getExhibitionColor(60), getExhibitionColor(10));
-        drawExhibitionBorderedRect(-1.5f, -1.5f, width + 1.5f, height + 1.5f, 1.5f, getExhibitionColor(60), getExhibitionColor(40));
-        drawExhibitionBorderedRect(0, 0, width, height, 0.5f, getExhibitionColor(22), getExhibitionColor(60));
-        drawExhibitionBorderedRect(2, 2, 38, 38, 0.5f, getExhibitionColor(0, 0), getExhibitionColor(10));
-        drawExhibitionBorderedRect(2.5f, 2.5f, 37.5f, 37.5f, 0.5f, getExhibitionColor(17), getExhibitionColor(48));
-        drawEntityOnScreen(20, 36, target);
-
-        drawText(name, 46, 4, -1, this.shadow.getValue());
-
-        float pct = MathHelper.clamp_float(heal / target.getMaxHealth(), 0, 1);
-        Color hpColor = blendColors(new float[]{0f, 0.5f, 1f}, new Color[]{Color.RED, Color.YELLOW, Color.GREEN}, pct);
-        RenderUtil.drawRect(42, 12, width - 8, 16, getExhibitionColor(0, 0));
-        RenderUtil.drawRect(42.5f, 12.5f, 42.5f + (width - 51f) * pct, 15.5f, hpColor.getRGB());
-
-        String infoText = "HP: " + (int) heal + " | Dist: " + (int) mc.thePlayer.getDistanceToEntity(target);
-        drawText(infoText, 46, 19, -1, this.shadow.getValue());
         GlStateManager.popMatrix();
     }
 

@@ -25,6 +25,7 @@ import unfair.property.properties.BooleanProperty;
 import unfair.property.properties.ColorProperty;
 import unfair.property.properties.FloatProperty;
 import unfair.property.properties.ModeProperty;
+import unfair.property.properties.PercentProperty;
 import unfair.util.*;
 
 import javax.imageio.ImageIO;
@@ -37,6 +38,7 @@ public class TargetESP extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
 
     public final ModeProperty mode = new ModeProperty("Mark Mode", 1, new String[]{"Points", "Ghost", "Image", "Exhi", "Circle"});
+    public final PercentProperty opacity = new PercentProperty("Opacity", 100, () -> mode.getValue() == 1);
     public final ModeProperty imageMode = new ModeProperty("Image Mode", 0, new String[]{"Rectangle", "Quad Stapple", "Triangle Stapple", "Triangle Stipple", "Aim", "Custom"},
             () -> mode.getValue() == 2);
     public final BooleanProperty animation = new BooleanProperty("Animation", true, () -> mode.getValue() == 2 && imageMode.getValue() == 5);
@@ -244,6 +246,7 @@ public class TargetESP extends Module {
             GlStateManager.popMatrix();
         }
         if (modeVal == 1) {
+            float alpha = getAlpha() * (opacity.getValue() / 100.0f);
             GlStateManager.pushMatrix();
             GlStateManager.disableLighting();
             GlStateManager.depthMask(false);
@@ -271,7 +274,6 @@ public class TargetESP extends Module {
             GL11.glRotated(idk[1], 1.0, 0.0, 0.0);
 
             Color baseColor = getModuleColor();
-            float alpha = getAlpha();
             int color = ColorUtil.applyOpacity(baseColor, alpha).getRGB();
 
             for (int i = 0; i < length; i++) {

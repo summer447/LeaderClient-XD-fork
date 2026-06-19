@@ -53,10 +53,16 @@ public class HUD extends Module {
 
     public final BooleanProperty showBar = new BooleanProperty("Bar", true);
     public final IntProperty barHeight = new IntProperty("Bar Height Less", 0, 0, 10);
+    public final ModeProperty barColorMode = new ModeProperty("Bar Color", 0, new String[]{"HUD", "Custom"}, () -> showBar.getValue());
+    public final ModeProperty barColorStyle = new ModeProperty("Bar Color Style", 0, new String[]{"Rainbow", "Chroma", "Astolfo", "Custom 1", "Custom 12", "Custom 123"}, () -> showBar.getValue() && barColorMode.getValue() == 1);
+    public final ColorProperty barCustom1 = new ColorProperty("Bar Custom 1", Color.WHITE.getRGB(), () -> showBar.getValue() && barColorMode.getValue() == 1 && barColorStyle.getValue() == 3);
+    public final ColorProperty barCustom2 = new ColorProperty("Bar Custom 2", Color.WHITE.getRGB(), () -> showBar.getValue() && barColorMode.getValue() == 1 && barColorStyle.getValue() == 4);
+    public final ColorProperty barCustom3 = new ColorProperty("Bar Custom 3", Color.WHITE.getRGB(), () -> showBar.getValue() && barColorMode.getValue() == 1 && barColorStyle.getValue() == 5);
 
     public final BooleanProperty shadow = new BooleanProperty("Shadow", true);
     public final BooleanProperty interval = new BooleanProperty("Interval", false);
     public final BooleanProperty suffixes = new BooleanProperty("Suffixes", true);
+    public final ModeProperty suffixStyle = new ModeProperty("Suffixes Style", 0, new String[]{"Normal", "HUD"}, () -> suffixes.getValue());
     public final BooleanProperty lowerCase = new BooleanProperty("Lower Case", false);
     public final BooleanProperty chatOutline = new BooleanProperty("Chat Outline", true);
     public final BooleanProperty blinkTimer = new BooleanProperty("Blink Timer", true);
@@ -210,6 +216,55 @@ public class HUD extends Module {
         );
     }
 
+    private Color getBarColor(long time, long offset) {
+        if (barColorMode.getValue() == 0) {
+            return null;
+        } else {
+            Color color = Color.white;
+            switch (barColorStyle.getValue()) {
+                case 0:
+                    color = ColorUtil.fromHSB(this.getColorCycle(time, offset), 1.0F, 1.0F);
+                    break;
+                case 1:
+                    color = ColorUtil.fromHSB(this.getColorCycle(time / 3L, 0L), 1.0F, 1.0F);
+                    break;
+                case 2:
+                    float cycle = this.getColorCycle(time, offset);
+                    if (cycle % 1.0F < 0.5F) {
+                        cycle = 1.0F - cycle % 1.0F;
+                    }
+                    color = ColorUtil.fromHSB(cycle, 1.0F, 1.0F);
+                    break;
+                case 3:
+                    color = new Color(this.barCustom1.getValue());
+                    break;
+                case 4:
+                    double cycle1 = this.getColorCycle(time, offset);
+                    color = ColorUtil.interpolate(
+                            (float) (2.0 * Math.abs(cycle1 - Math.floor(cycle1 + 0.5))),
+                            new Color(this.barCustom1.getValue()),
+                            new Color(this.barCustom2.getValue())
+                    );
+                    break;
+                case 5:
+                    double cycle2 = this.getColorCycle(time, offset);
+                    float floor = (float) (2.0 * Math.abs(cycle2 - Math.floor(cycle2 + 0.5)));
+                    if (floor <= 0.5F) {
+                        color = ColorUtil.interpolate(floor * 2.0F, new Color(this.barCustom1.getValue()), new Color(this.barCustom2.getValue()));
+                    } else {
+                        color = ColorUtil.interpolate((floor - 0.5F) * 2.0F, new Color(this.barCustom2.getValue()), new Color(this.barCustom3.getValue()));
+                    }
+                    break;
+            }
+            float[] hsb = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
+            return Color.getHSBColor(
+                    hsb[0],
+                    hsb[1] * (this.colorSaturation.getValue().floatValue() / 100.0F),
+                    hsb[2] * (this.colorBrightness.getValue().floatValue() / 100.0F)
+            );
+        }
+    }
+
     @EventTarget
     public void onTick(TickEvent event) {
         if (this.isEnabled() && event.getType() == EventType.POST) {
@@ -246,7 +301,7 @@ public class HUD extends Module {
                 float textHeight = (float) mc.fontRendererObj.FONT_HEIGHT - 1.0F;
                 float padX = (float) this.bgWidth.getValue();
                 float padY = (float) this.bgHeight.getValue();
-                float rowHeight = textHeight + padY * 2;
+                float rowHeight = textHeight + padY * 2 + 1;
                 float barSize = this.showBar.getValue() ? BAR_WIDTH : 0.0F;
 
                 float x = (float) this.offsetX.getValue()
@@ -333,7 +388,13 @@ public class HUD extends Module {
 
                     if (this.showBar.getValue() && heightFactor > 0.02F) {
                         int barAlpha = Math.min(255, (int) (heightFactor * 255.0F));
-                        int barColor = (color & 0x00FFFFFF) | (barAlpha << 24);
+                        int barColor;
+                        Color customBarColor = getBarColor(l, offset);
+                        if (customBarColor != null) {
+                            barColor = (customBarColor.getRGB() & 0x00FFFFFF) | (barAlpha << 24);
+                        } else {
+                            barColor = (color & 0x00FFFFFF) | (barAlpha << 24);
+                        }
                         if (alignLeft) {
                             RenderUtil.drawRect(moduleLeft, drawY + this.barHeight.getValue(), moduleLeft + BAR_WIDTH, drawY + rowHeight - this.barHeight.getValue(), barColor);
                         } else {
@@ -358,7 +419,12 @@ public class HUD extends Module {
 
                         if (this.suffixes.getValue() && moduleSuffix.length > 0 && heightFactor > 0.5F) {
                             int suffixAlpha = Math.min(255, (int) (((heightFactor - 0.5F) / 0.5F) * 255.0F));
-                            int suffixColor = (ChatColors.GRAY.toAwtColor() & 0x00FFFFFF) | (suffixAlpha << 24);
+                            int suffixColor;
+                            if (suffixStyle.getValue() == 1) {
+                                suffixColor = (animatedColor & 0x00FFFFFF) | (suffixAlpha << 24);
+                            } else {
+                                suffixColor = (ChatColors.GRAY.toAwtColor() & 0x00FFFFFF) | (suffixAlpha << 24);
+                            }
                             for (String suffix : moduleSuffix) {
                                 currentTextX += SUFFIX_GAP;
                                 if (this.shadow.getValue()) {
@@ -402,7 +468,7 @@ public class HUD extends Module {
                 float fontHeight = (float) fr.getHeight();
                 float padX = (float) this.bgWidth.getValue();
                 float padY = (float) this.bgHeight.getValue();
-                float rowHeight = fontHeight + padY;
+                float rowHeight = fontHeight + padY + 1;
                 float scaleVal = this.scale.getValue();
                 ScaledResolution sr = new ScaledResolution(mc);
                 float scaledWidth = sr.getScaledWidth() / scaleVal;
@@ -475,7 +541,13 @@ public class HUD extends Module {
 
                     if (this.showBar.getValue() && heightFactor > 0.02F) {
                         int barAlpha = Math.min(255, (int) (heightFactor * 255.0F));
-                        int barColor = (color & 0x00FFFFFF) | (barAlpha << 24);
+                        int barColor;
+                        Color customBarColor = getBarColor(l, offset);
+                        if (customBarColor != null) {
+                            barColor = (customBarColor.getRGB() & 0x00FFFFFF) | (barAlpha << 24);
+                        } else {
+                            barColor = (color & 0x00FFFFFF) | (barAlpha << 24);
+                        }
                         if (alignLeft) {
                             RenderUtil.drawRect(moduleLeft, drawY + this.barHeight.getValue(), moduleLeft + BAR_WIDTH, drawY + rowHeight - this.barHeight.getValue(), barColor);
                         } else {
@@ -496,7 +568,12 @@ public class HUD extends Module {
 
                         if (this.suffixes.getValue() && moduleSuffix.length > 0 && heightFactor > 0.5F) {
                             int suffixAlpha = Math.min(255, (int) (((heightFactor - 0.5F) / 0.5F) * 255.0F));
-                            int suffixColor = (ChatColors.GRAY.toAwtColor() & 0x00FFFFFF) | (suffixAlpha << 24);
+                            int suffixColor;
+                            if (suffixStyle.getValue() == 1) {
+                                suffixColor = (animatedColor & 0x00FFFFFF) | (suffixAlpha << 24);
+                            } else {
+                                suffixColor = (ChatColors.GRAY.toAwtColor() & 0x00FFFFFF) | (suffixAlpha << 24);
+                            }
                             for (String string : moduleSuffix) {
                                 currentTextX += SUFFIX_GAP;
                                 fr.drawString(string, currentTextX, textY, suffixColor, this.shadow.getValue());
