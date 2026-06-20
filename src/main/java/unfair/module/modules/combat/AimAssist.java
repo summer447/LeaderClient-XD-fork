@@ -29,6 +29,7 @@ public class AimAssist extends Module {
     public final IntProperty fov = new IntProperty("FOV", 90, 30, 360);
     public final BooleanProperty weaponOnly = new BooleanProperty("Weapons Only", true);
     public final BooleanProperty allowTools = new BooleanProperty("Allow Tools", false, this.weaponOnly::getValue);
+    public final BooleanProperty breakingBlocks = new BooleanProperty("BreakingBlocks", false);
     public final BooleanProperty botChecks = new BooleanProperty("Bot Check", true);
     public final BooleanProperty team = new BooleanProperty("Teams", true);
     private final TimerUtil timer = new TimerUtil();
@@ -66,7 +67,10 @@ public class AimAssist extends Module {
     }
 
     private boolean isLookingAtBlock() {
-        return mc.objectMouseOver != null && mc.objectMouseOver.typeOfHit == MovingObjectType.BLOCK;
+        if (breakingBlocks.getValue()) {
+            return mc.objectMouseOver != null && mc.objectMouseOver.typeOfHit == MovingObjectType.BLOCK;
+        }
+        else return false;
     }
 
     @EventTarget

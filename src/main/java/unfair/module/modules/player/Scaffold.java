@@ -12,6 +12,7 @@ import net.minecraft.util.*;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.WorldSettings.GameType;
 import unfair.Unfair;
+import unfair.enums.BlinkModules;
 import unfair.event.EventTarget;
 import unfair.event.types.EventType;
 import unfair.event.types.Priority;
@@ -49,7 +50,7 @@ public class Scaffold extends Module {
             0.90625,
             0.96875
     };
-    public final ModeProperty mode = new ModeProperty("Mode", 1, new String[]{"Normal", "Telly"});
+    public final ModeProperty mode = new ModeProperty("Mode", 1, new String[]{"Normal", "Telly","Snap"});
     public final ModeProperty rotationMode = new ModeProperty("Rotate Mode", 3, new String[]{"None", "Vanilla", "Backwards", "Prediction"});
     public final ModeProperty towerMode = new ModeProperty("Tower Mode", 0, new String[]{"None", "Vanilla", "Motion", "Jump"});
     public final ModeProperty moveFix = new ModeProperty("Move Fix", 1, new String[]{"None", "Silent"});
@@ -61,6 +62,9 @@ public class Scaffold extends Module {
     public final BooleanProperty itemSpoof = new BooleanProperty("Item Spoof", false);
     public final BooleanProperty clutch = new BooleanProperty("Clutch", true);
     public final BooleanProperty onlyInVoid = new BooleanProperty("Only Void", false, this.clutch::getValue);
+
+    public final IntProperty forwardTicks = new IntProperty("Forward Ticks", 5, 1, 20, () -> mode.getValue() == 2);
+    public final IntProperty backTicks = new IntProperty("Back Ticks", 5, 1, 20, () -> mode.getValue() == 2);
 
     private int rotationTick = 0;
     private int lastSlot = -1;
@@ -87,6 +91,9 @@ public class Scaffold extends Module {
     private int placeDelayCounter = 0;
     private boolean sa;
 
+    private int snapTickCounter = 0;
+    private boolean snapForward = true;
+
     public Scaffold() {
         super("Scaffold", false);
     }
@@ -101,7 +108,7 @@ public class Scaffold extends Module {
         if (this.isTowering()) {
             return false;
         } else {
-            return this.stage <= 0;
+            return this.stage <= 0 && this.mode.getValue() != 2;
         }
     }
 
@@ -247,7 +254,6 @@ public class Scaffold extends Module {
             savedMotionY = mc.thePlayer.motionY;
             savedMotionZ = mc.thePlayer.motionZ;
             this.clutchTickCounter = 0;
-            //Unfair.blinkManager.setBlinkState(true, BlinkModules.BLINK);
         }
         if (this.clutchActive) {
             this.clutchTickCounter++;
@@ -259,32 +265,21 @@ public class Scaffold extends Module {
                     savedMotionY = mc.thePlayer.motionY;
                     savedMotionZ = mc.thePlayer.motionZ;
                 }
-                //Unfair.blinkManager.setBlinkState(true, BlinkModules.BLINK);
-                mc.thePlayer.motionX = 0.0;
-                mc.thePlayer.motionY = 0.0;
-                mc.thePlayer.motionZ = 0.0;
+                Unfair.moduleManager.getModule(Stuck.class).setEnabled(true);
             } else {
                 sa = false;
-                mc.thePlayer.motionX = savedMotionX;
-                mc.thePlayer.motionZ = savedMotionZ;
-                mc.thePlayer.motionY = savedMotionY;
-                //Unfair.blinkManager.setBlinkState(false, BlinkModules.BLINK);
-                //大狗屎blink
-                BlockData blockData = this.getBlockData();
-                if (blockData != null) {
-                    Vec3 hitVec = BlockUtil.getClickVec(blockData.blockPos(), blockData.facing());
-                    this.place(blockData.blockPos(), blockData.facing(), hitVec);
-                }
+                Unfair.moduleManager.getModule(Stuck.class).setEnabled(false);
+            }
+            if (clutchTickCounter >= 30){
+                clutchReset();
+                clutchActive = false;
             }
         }
     }
 
     private void clutchReset() {
         if (this.clutchActive) {
-            //Unfair.blinkManager.setBlinkState(false, BlinkModules.BLINK);
-            mc.thePlayer.motionX = savedMotionX;
-            mc.thePlayer.motionZ = savedMotionZ;
-            mc.thePlayer.motionY = savedMotionY;
+            Unfair.moduleManager.getModule(Stuck.class).setEnabled(false);
         }
         this.clutchActive = false;
         this.clutchTickCounter = 0;
@@ -316,6 +311,28 @@ public class Scaffold extends Module {
             );
             if (mc.theWorld.getBlockState(checkPos).getBlock().getMaterial().isSolid()) {
                 return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isOnEdge() {
+        if (!mc.thePlayer.onGround) return true;
+        BlockPos below = new BlockPos(MathHelper.floor_double(mc.thePlayer.posX), MathHelper.floor_double(mc.thePlayer.posY) - 1, MathHelper.floor_double(mc.thePlayer.posZ));
+        if (BlockUtil.isReplaceable(below)) {
+            return true;
+        }
+        double edgeThreshold = 0.15;
+        double xOff = mc.thePlayer.posX - MathHelper.floor_double(mc.thePlayer.posX);
+        double zOff = mc.thePlayer.posZ - MathHelper.floor_double(mc.thePlayer.posZ);
+        if (xOff < edgeThreshold || xOff > 1.0 - edgeThreshold || zOff < edgeThreshold || zOff > 1.0 - edgeThreshold) {
+            int checkX = MathHelper.floor_double(mc.thePlayer.posX) + (xOff < edgeThreshold ? -1 : (xOff > 1.0 - edgeThreshold ? 1 : 0));
+            int checkZ = MathHelper.floor_double(mc.thePlayer.posZ) + (zOff < edgeThreshold ? -1 : (zOff > 1.0 - edgeThreshold ? 1 : 0));
+            if (checkX != MathHelper.floor_double(mc.thePlayer.posX) || checkZ != MathHelper.floor_double(mc.thePlayer.posZ)) {
+                BlockPos adjacentBelow = new BlockPos(checkX, MathHelper.floor_double(mc.thePlayer.posY) - 1, checkZ);
+                if (BlockUtil.isReplaceable(adjacentBelow)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -365,6 +382,24 @@ public class Scaffold extends Module {
                 this.tellyJumpDelayTimer = 0;
             }
             this.updateClutch();
+
+            if (this.mode.getValue() == 2) {
+                if (mc.thePlayer.onGround && !this.isOnEdge()) {
+                    int forward = forwardTicks.getValue();
+                    int back = backTicks.getValue();
+                    int cycle = forward + back;
+                    if (cycle > 0) {
+                        snapTickCounter++;
+                        if (snapTickCounter >= cycle) {
+                            snapTickCounter = 0;
+                        }
+                        snapForward = snapTickCounter < forward;
+                    }
+                } else {
+                    snapForward = false;
+                }
+            }
+
             if (this.canPlace()) {
                 ItemStack stack = mc.thePlayer.getHeldItem();
                 int count = ItemUtil.isBlock(stack) ? stack.stackSize : 0;
@@ -384,11 +419,24 @@ public class Scaffold extends Module {
                         }
                     }
                 }
+
+                if (this.mode.getValue() == 2) {
+                    if (snapForward) {
+                        this.yaw = RotationUtil.quantizeAngle(getCurrentYaw());
+                        this.pitch = 80.0F;
+                    } else {
+                        this.yaw = RotationUtil.quantizeAngle(getCurrentYaw() + 180.0F);
+                        this.pitch = 85.0F;
+                    }
+                    this.canRotate = true;
+                }
+
                 float currentYaw = this.getCurrentYaw();
                 float yawDiffTo180 = RotationUtil.wrapAngleDiff(currentYaw - 180.0F, event.getYaw());
                 float diagonalYaw = this.isDiagonal(currentYaw)
                         ? yawDiffTo180
                         : RotationUtil.wrapAngleDiff(currentYaw - 135.0F * ((currentYaw + 180.0F) % 90.0F < 45.0F ? 1.0F : -1.0F), event.getYaw());
+
                 if (!this.canRotate) {
                     switch (this.rotationMode.getValue()) {
                         case 1:
@@ -417,6 +465,11 @@ public class Scaffold extends Module {
                 }
                 BlockData blockData = this.getBlockData();
                 Vec3 hitVec = null;
+
+                if (this.mode.getValue() == 2 && snapForward) {
+                    blockData = null;
+                }
+
                 if (blockData != null) {
                     if (this.rotationMode.getValue() == 3) {
                         double[] offsets = {0.1, 0.3, 0.5, 0.7, 0.9};
@@ -552,7 +605,8 @@ public class Scaffold extends Module {
                         this.yaw = RotationUtil.quantizeAngle(yawDiffTo180);
                     }
                 }
-                if (this.rotationMode.getValue() != 0) {
+
+                if (this.rotationMode.getValue() != 0 && this.mode.getValue() != 2) {
                     float targetYaw = this.yaw;
                     float targetPitch = this.pitch;
                     if (this.towering && (mc.thePlayer.motionY > 0.0 || mc.thePlayer.posY > (double) (this.startY + 1))) {
@@ -580,7 +634,22 @@ public class Scaffold extends Module {
                     if (this.moveFix.getValue() == 1) {
                         event.setPervRotation(targetYaw, 3);
                     }
+                } else if (this.mode.getValue() == 2 && this.rotationMode.getValue() != 0) {
+                    float targetYaw = this.yaw;
+                    float targetPitch = this.pitch;
+                    float yawDiff = MathHelper.wrapAngleTo180_float(targetYaw - event.getYaw());
+                    float tolerance = this.rotationTick >= 2 ? startRotSpeed.getValue() : normalRotSpeed.getValue();
+                    if (Math.abs(yawDiff) > tolerance) {
+                        float clampedYaw = RotationUtil.clampAngle(yawDiff, tolerance);
+                        targetYaw = RotationUtil.quantizeAngle(event.getYaw() + clampedYaw);
+                        this.rotationTick = Math.max(this.rotationTick, 1);
+                    }
+                    event.setRotation(targetYaw, targetPitch, 3);
+                    if (this.moveFix.getValue() == 1) {
+                        event.setPervRotation(targetYaw, 3);
+                    }
                 }
+
                 if (blockData != null && hitVec != null && this.rotationTick <= 0) {
                     if (this.placeDelayCounter > 0) {
                         this.placeDelayCounter--;
@@ -614,11 +683,6 @@ public class Scaffold extends Module {
     }
 
     @EventTarget
-    public void onPacket(PacketEvent event) {
-        if (!(event.getPacket() instanceof C03PacketPlayer) && this.clutchActive && !this.sa) event.setCancelled(true);
-    }
-
-    @EventTarget
     public void onStrafe(StrafeEvent event) {
         if (this.isEnabled()) {
             if (this.clutchActive && this.clutchTickCounter % 10 != 0) {
@@ -626,6 +690,8 @@ public class Scaffold extends Module {
                 event.setStrafe(0.0F);
                 return;
             }
+            if (this.mode.getValue() == 2) return;
+
             if (!mc.thePlayer.isCollidedHorizontally
                     && mc.thePlayer.hurtTime <= 5
                     && !mc.thePlayer.isPotionActive(Potion.jump)
@@ -776,6 +842,8 @@ public class Scaffold extends Module {
         this.towerTicks = 0;
         this.lastTowerY = 0.0;
         this.placeDelayCounter = 0;
+        this.snapTickCounter = 0;
+        this.snapForward = true;
     }
 
     @Override
@@ -784,6 +852,7 @@ public class Scaffold extends Module {
         if (mc.thePlayer != null && this.lastSlot != -1) {
             mc.thePlayer.inventory.currentItem = this.lastSlot;
         }
+        this.snapTickCounter = 0;
     }
 
     public double getLastTowerY() {

@@ -34,7 +34,8 @@ import java.util.Objects;
 
 public class AutoProjectiles extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
-    public final FloatProperty range = new FloatProperty("Range", 8.0F, 3.0F, 20.0F);
+    public final FloatProperty range = new FloatProperty("MaxRange", 8.0F, 3.0F, 20.0F);
+    public final FloatProperty minRange = new FloatProperty("MinRange", 5.0F, 3.0F, 20.0F);
 
     public final BooleanProperty smartDelay = new BooleanProperty("Smart Delay", false);
     public final IntProperty throwDelay = new IntProperty("Throw Delay Ticks", 3, 1, 15, () -> !smartDelay.getValue());
@@ -58,6 +59,7 @@ public class AutoProjectiles extends Module {
         if (entity == mc.thePlayer || entity.deathTime > 0) return false;
         if (!(entity instanceof EntityOtherPlayerMP)) return false;
         if (mc.thePlayer.getDistanceToEntity(entity) > this.range.getValue()) return false;
+        if (mc.thePlayer.getDistanceToEntity(entity) < this.minRange.getValue()) return false;
         EntityPlayer player = (EntityPlayer) entity;
         if (!isEntityHeightVisible(entity)) return false;
         return (!this.teams.getValue() || !TeamUtil.isSameTeam(player)) && (!this.botCheck.getValue() || !TeamUtil.isBot(player));
@@ -216,7 +218,7 @@ public class AutoProjectiles extends Module {
             return;
         }
         KillAura aura = (KillAura) Unfair.moduleManager.modules.get(KillAura.class);
-        if (aura.isEnabled() && mc.thePlayer.getDistanceToEntity(aura.getTarget()) > aura.autoBlockRange.getValue() - 1f){
+        if (aura.isEnabled() && aura.isPlayerBlocking()){
             this.target = null;
             this.throwState = 0;
             this.switchBack();

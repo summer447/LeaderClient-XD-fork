@@ -39,10 +39,12 @@ import unfair.event.types.EventType;
 import unfair.event.types.Priority;
 import unfair.events.*;
 import unfair.management.RotationState;
+import unfair.mixin.IAccessorMinecraft;
 import unfair.mixin.IAccessorPlayerControllerMP;
 import unfair.mixin.IAccessorRenderManager;
 import unfair.module.Module;
 import unfair.module.modules.misc.BedNuker;
+import unfair.module.modules.movement.NoSlow;
 import unfair.module.modules.player.AutoBlockIn;
 import unfair.module.modules.player.AutoHeal;
 import unfair.module.modules.player.Scaffold;
@@ -89,6 +91,7 @@ public class KillAura extends Module {
     public final BooleanProperty weaponsOnly;
     public final BooleanProperty allowTools;
     public final BooleanProperty inventoryCheck;
+    public final BooleanProperty lowTimerCheck;
     public final BooleanProperty botCheck;
     public final BooleanProperty players;
     public final BooleanProperty bosses;
@@ -140,6 +143,7 @@ public class KillAura extends Module {
         this.weaponsOnly = new BooleanProperty("Weapons Only", false);
         this.allowTools = new BooleanProperty("Allow Tools", false, this.weaponsOnly::getValue);
         this.inventoryCheck = new BooleanProperty("Inventory Check", true);
+        this.lowTimerCheck = new BooleanProperty("Low Timer Check", true);
         this.botCheck = new BooleanProperty("Bot Check", true);
         this.players = new BooleanProperty("Players", true);
         this.bosses = new BooleanProperty("Bosses", false);
@@ -161,7 +165,20 @@ public class KillAura extends Module {
                 return false;
             } else if (this.attackDelayMS > 0L) {
                 return false;
-            } else {
+            }else if (Velocity.extraAttacked && this.autoBlock.getValue() == 2){
+                ChatUtil.sendFormatted("StoppedAttack");
+                Velocity.extraAttacked = false;
+                Velocity velocity = (Velocity) Unfair.moduleManager.getModule(Velocity.class);
+                if (velocity.reduceMode.getValue() == 2) {
+                    blockTick = 0;
+                }
+                if (velocity.reduceMode.getValue() == 1){
+                    Unfair.blinkManager.setBlinkState(false,BlinkModules.AUTO_BLOCK);
+                    blockTick = 2;
+                }
+                return false;
+            }
+            else {
                 this.attackDelayMS = this.attackDelayMS + this.getAttackDelay();
                 mc.thePlayer.swingItem();
                 if ((this.rotations.getValue() != 0 || !this.isBoxInAttackRange(this.target.getBox()))
@@ -222,7 +239,10 @@ public class KillAura extends Module {
     private boolean canAttack() {
         if (this.inventoryCheck.getValue() && mc.currentScreen instanceof GuiContainer) {
             return false;
-        } else if (!(Boolean) this.weaponsOnly.getValue()
+        } if (((IAccessorMinecraft)mc).getTimer().timerSpeed < 1F && lowTimerCheck.getValue()){
+            return false;
+        }
+        else if (!(Boolean) this.weaponsOnly.getValue()
                 || ItemUtil.hasRawUnbreakingEnchant()
                 || this.allowTools.getValue() && ItemUtil.isHoldingTool()) {
             if (((IAccessorPlayerControllerMP) mc.playerController).getIsHittingBlock()) {
@@ -439,7 +459,6 @@ public class KillAura extends Module {
                                             this.blockTick = 1;
                                             break;
                                         case 1:
-
                                             attack = false;
                                             this.blockTick = 2;
                                             break;
@@ -474,6 +493,8 @@ public class KillAura extends Module {
                                 }
                                 PacketUtil.sendPacket(new C09PacketHeldItemChange(randomSlot));
                                 PacketUtil.sendPacket(new C09PacketHeldItemChange(mc.thePlayer.inventory.currentItem));
+                                this.stopBlock();
+                                Velocity.extraAttacked = false;
                                 this.isBlocking = false;
                                 this.fakeBlockState = false;
                             }
@@ -932,6 +953,16 @@ public class KillAura extends Module {
     @Override
     public void onDisabled() {
         Unfair.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
+        if ((this.autoBlock.getValue() == 2 || this.autoBlock.getValue() == 5 || this.autoBlock.getValue() == 6) && Unfair.moduleManager.getModule(NoSlow.class).isEnabled()){
+            int randomSlot = new Random().nextInt(9);
+            while (randomSlot == mc.thePlayer.inventory.currentItem) {
+                randomSlot = new Random().nextInt(9);
+            }
+            PacketUtil.sendPacket(new C09PacketHeldItemChange(randomSlot));
+            PacketUtil.sendPacket(new C09PacketHeldItemChange(mc.thePlayer.inventory.currentItem));
+            this.stopBlock();
+        }
+        Velocity.extraAttacked = false;
         this.blockingState = false;
         this.isBlocking = false;
         this.fakeBlockState = false;
@@ -957,22 +988,6 @@ public class KillAura extends Module {
                     this.minCPS.setValue(this.maxCPS.getValue());
                 }
             }
-        }
-    }
-    public static class RotationData{
-        private final Vec3 eye;
-        private final Vec3 hiteVec;
-        private double distance;
-        private final Vector2f roation;
-        public Vector2f getRotation(){
-            return roation;
-        }
-
-        public RotationData(Vec3 bestEye, Vec3 bestHitVec, double minDistance, Vector2f bestRotation) {
-            eye  = bestEye;
-            hiteVec = bestHitVec;
-            distance = minDistance;
-            roation = bestRotation;
         }
     }
     @Override

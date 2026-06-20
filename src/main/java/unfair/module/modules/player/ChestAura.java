@@ -2,6 +2,9 @@ package unfair.module.modules.player;
 
 import net.minecraft.block.BlockChest;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.inventory.GuiChest;
+import net.minecraft.client.gui.inventory.GuiContainer;
+import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.network.play.server.S24PacketBlockAction;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityChest;
@@ -99,6 +102,12 @@ public class ChestAura extends Module {
 
         KillAura killAura = (KillAura) Unfair.moduleManager.getModule(KillAura.class);
         if (killAura != null && killAura.isEnabled() && killAura.getTarget() != null) {
+            targetChest = null;
+            isRotating = false;
+            return;
+        }
+
+        if (mc.currentScreen instanceof GuiContainer || mc.currentScreen instanceof GuiInventory){
             targetChest = null;
             isRotating = false;
             return;

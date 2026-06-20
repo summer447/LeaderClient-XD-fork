@@ -35,7 +35,7 @@ public class Velocity extends Module {
     public final ModeProperty mode = new ModeProperty("Mode", 0, new String[]{"Vanilla","Prediction"});
     public final BooleanProperty reduce = new BooleanProperty("Reduce", true, () -> mode.getValue() == 1);
     public final ModeProperty reduceMode = new ModeProperty("ReduceMode", 0, new String[]{"Attack", "ReleaseWhenCanAttack","ReleaseBeforeCanAttack"}, () -> mode.getValue() == 1 && reduce.getValue());
-    private final BooleanProperty extraAttack = new BooleanProperty("ExtraAttack", false, () -> mode.getValue() == 1 && reduce.getValue() && reduceMode.getValue() == 1);
+    private final BooleanProperty extraAttack = new BooleanProperty("ExtraAttack", false, () -> mode.getValue() == 1 && reduce.getValue() && reduceMode.getValue() != 0);
     private final BooleanProperty reduceWhenCanAttack = new BooleanProperty("Reduce When Can Attack", true, () -> mode.getValue() == 1 && reduce.getValue() && reduceMode.getValue() == 0);
     private final BooleanProperty onlySprinting = new BooleanProperty("Only Sprinting", true, () -> mode.getValue() == 1 && reduceMode.getValue() == 0);
     public final IntProperty attackTimes = new IntProperty("Attack Times", 1, 1, 5, () -> this.mode.getValue() == 1 && this.reduce.getValue() && reduceMode.getValue() == 0);
@@ -64,13 +64,13 @@ public class Velocity extends Module {
     private boolean jumpFlag = false;
     public static boolean hasReceivedVelocity;
     private int ticksSinceVelocity = -1;
-    private boolean handleReset = false;
 
     private double knockbackX = 0;
     private float[] targetRotation = null;
     private double knockbackZ = 0;
     private int reduceTick = -1;
-    private boolean extraAttacked = false;
+    private boolean pressed = false;
+    public static boolean extraAttacked,velocityAttacked = false;
 
     public Velocity() {
         super("Velocity", false, false);
@@ -163,24 +163,86 @@ public class Velocity extends Module {
             }
         }
     }
-        private void handleJumpReset() {
-            Scaffold scaffold = (Scaffold) Unfair.moduleManager.getModule(Scaffold.class);
-            if (mc.thePlayer == null || mc.currentScreen instanceof GuiInventory || scaffold.isEnabled()) return;
-            if (ticksSinceVelocity >= 0) {
-                handleReset = true;
-                if (ticksSinceVelocity <= 2 && mc.thePlayer.onGround) {
-                    KeyBindUtil.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(),true);
-                }
+    private void handleJumpReset() {
+        Scaffold scaffold = (Scaffold) Unfair.moduleManager.getModule(Scaffold.class);
+        if (mc.thePlayer == null || mc.currentScreen instanceof GuiInventory || scaffold.isEnabled()) return;
+        if (ticksSinceVelocity >= 0) {
+            if (ticksSinceVelocity == 0){
+                pressed = mc.gameSettings.keyBindJump.isPressed();
             }
-            if (ticksSinceVelocity >= 4 && ticksSinceVelocity <= 9) {
-                KeyBindUtil.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(),false);
-                handleReset = false;
+            if (ticksSinceVelocity <= 2 && mc.thePlayer.onGround) {
+                KeyBindUtil.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(),true);
             }
         }
+        if (ticksSinceVelocity >= 4 && ticksSinceVelocity <= 9) {
+            KeyBindUtil.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(),pressed);
+        }
+    }
     @EventTarget
     public void onUpdate(UpdateEvent event) {
         if (!isEnabled()) return;
         if (mode.getValue() == 1) {
+            if (reduce.getValue()) {
+                if (event.getType() == EventType.PRE) {
+                    if (velocityAttacked) {
+                        KillAura killAura = (KillAura) Unfair.moduleManager.getModule(KillAura.class);
+                        if (killAura.getTarget() != null && killAura.isEnabled()) {
+                            ChatUtil.sendFormatted("Attack");
+                            EventManager.call(new AttackEvent(killAura.getTarget()));
+                            mc.getNetHandler().addToSendQueue(new C0APacketAnimation());
+                            if (killAura.getTarget() != mc.thePlayer) {
+                                mc.getNetHandler().addToSendQueue(new C02PacketUseEntity(killAura.getTarget(), C02PacketUseEntity.Action.ATTACK));
+                            } else {
+                                mc.getNetHandler().addToSendQueue(new C02PacketUseEntity(Objects.requireNonNull(killAura.getTarget()), C02PacketUseEntity.Action.ATTACK));
+                            }
+                            mc.thePlayer.motionX *= 0.6D;
+                            mc.thePlayer.motionZ *= 0.6D;
+                            mc.thePlayer.setSprinting(false);
+                        }
+                        velocityAttacked = false;
+                    }
+                    if (hasReceivedVelocity) {
+                        if (reduceTick >= attackTimes.getValue()) {
+                            reduceTick = 0;
+                            hasReceivedVelocity = false;
+                        }
+                        RayCastUtil.RayCastResult targetA = RayCastUtil.rayCast(new RotationUtil.RotationVec(event.getYaw(), event.getPitch()), 3);
+                        if (targetA != null && reduceMode.getValue() == 0) {
+                            if (targetA.entityHit instanceof EntityPlayer && targetA.entityHit != mc.thePlayer) {
+                                if (mc.thePlayer.isSprinting() || !this.onlySprinting.getValue()) {
+                                    KillAura killAura = (KillAura) Unfair.moduleManager.getModule(KillAura.class);
+                                    if (killAura.getTarget() != null) {
+                                        if (!reduceWhenCanAttack.getValue() || (killAura.blockTick == 0 && killAura.autoBlock.getValue() == 2) || (killAura.autoBlock.getValue() == 6 && killAura.blockTick == killAura.attackTick.getValue()) || (killAura.autoBlock.getValue() != 6 && killAura.autoBlock.getValue() != 2) || (killAura.autoBlock.getValue() == 5 && killAura.blockTick == 0)) {
+                                            EventManager.call(new AttackEvent(killAura.getTarget()));
+                                            mc.getNetHandler().addToSendQueue(new C0APacketAnimation());
+                                            if (killAura.getTarget() != mc.thePlayer) {
+                                                mc.getNetHandler().addToSendQueue(new C02PacketUseEntity(killAura.getTarget(), C02PacketUseEntity.Action.ATTACK));
+                                            } else {
+                                                mc.getNetHandler().addToSendQueue(new C02PacketUseEntity(Objects.requireNonNull(killAura.getTarget()), C02PacketUseEntity.Action.ATTACK));
+                                            }
+                                            mc.thePlayer.motionX *= 0.6D;
+                                            mc.thePlayer.motionZ *= 0.6D;
+                                            mc.thePlayer.setSprinting(false);
+                                        }
+                                    } else {
+                                        EventManager.call(new AttackEvent(targetA.entityHit));
+                                        mc.getNetHandler().addToSendQueue(new C0APacketAnimation());
+                                        if (targetA.entityHit != mc.thePlayer) {
+                                            mc.getNetHandler().addToSendQueue(new C02PacketUseEntity(targetA.entityHit, C02PacketUseEntity.Action.ATTACK));
+                                        } else {
+                                            mc.getNetHandler().addToSendQueue(new C02PacketUseEntity(Objects.requireNonNull(targetA.entityHit), C02PacketUseEntity.Action.ATTACK));
+                                        }
+                                        mc.thePlayer.motionX *= 0.6D;
+                                        mc.thePlayer.motionZ *= 0.6D;
+                                        mc.thePlayer.setSprinting(false);
+                                    }
+                                }
+                            }
+                        }
+                        reduceTick++;
+                    }
+                }
+            }
             if (event.getType() == EventType.PRE) {
                 int maxTick = this.rotateTick.getValue();
                 if (this.rotatoTickCounter > 0 && this.rotatoTickCounter <= maxTick) {
@@ -212,71 +274,17 @@ public class Velocity extends Module {
                         || (airBuffer.getValue() && mc.thePlayer.onGround && delayFlag))  || (reduceMode.getValue() == 1 && killAura.autoBlock.getValue() == 2 && killAura.blockTick == 0 && killAura.shouldAutoBlock()  && reduce.getValue()) || (reduceMode.getValue() == 2 && killAura.autoBlock.getValue() == 2 && killAura.blockTick == 2 && killAura.shouldAutoBlock()) && reduce.getValue()) {
                     ticksSinceVelocity = 0;
                     if (killAura.getTarget() != null) {
-                        if (extraAttack.getValue() && reduceMode.getValue() == 1 && reduce.getValue() && killAura.blockTick == 0) {
-                            extraAttacked = true;
+                        if (extraAttack.getValue() && reduce.getValue() && reduceMode.getValue() != 0) {
+                            if (!extraAttacked) {
+                                extraAttacked = true;
+                                velocityAttacked = true;
+                            }
                         }
                     }
                     hasReceivedVelocity = true;
                     dbg(Unfair.clientName + "Delay/Buffer " + Unfair.delayManager.getDelay() + " Ticks");
                     Unfair.delayManager.setDelayState(false, DelayModules.VELOCITY);
                     delayFlag = false;
-                }
-            }
-            if (reduce.getValue()) {
-                if (event.getType() != EventType.PRE) return;
-                if (extraAttacked){
-                    KillAura killAura = (KillAura)Unfair.moduleManager.getModule(KillAura.class);
-                    EventManager.call(new AttackEvent(killAura.getTarget()));
-                    mc.getNetHandler().addToSendQueue(new C0APacketAnimation());
-                    if (killAura.getTarget() != mc.thePlayer) {
-                        mc.getNetHandler().addToSendQueue(new C02PacketUseEntity(killAura.getTarget(), C02PacketUseEntity.Action.ATTACK));
-                    } else {
-                        mc.getNetHandler().addToSendQueue(new C02PacketUseEntity(Objects.requireNonNull(killAura.getTarget()), C02PacketUseEntity.Action.ATTACK));
-                    }
-                    mc.thePlayer.motionX *= 0.6D;
-                    mc.thePlayer.motionZ *= 0.6D;
-                    mc.thePlayer.setSprinting(false);
-                    extraAttacked = false;
-                }
-                if (hasReceivedVelocity){
-                    if (reduceTick >= attackTimes.getValue()){
-                        reduceTick = 0;
-                        hasReceivedVelocity = false;
-                    }
-                    RayCastUtil.RayCastResult targetA = RayCastUtil.rayCast(new RotationUtil.RotationVec(event.getYaw(),event.getPitch()),3);
-                    if (targetA != null && reduceMode.getValue() == 0) {
-                        if (targetA.entityHit instanceof EntityPlayer && targetA.entityHit != mc.thePlayer) {
-                            if (mc.thePlayer.isSprinting() || !this.onlySprinting.getValue()) {
-                                KillAura killAura = (KillAura) Unfair.moduleManager.getModule(KillAura.class);
-                                if (killAura.getTarget() != null) {
-                                    if (!reduceWhenCanAttack.getValue() || (killAura.blockTick == 0 && killAura.autoBlock.getValue() == 2) || (killAura.autoBlock.getValue() == 6 && killAura.blockTick == killAura.attackTick.getValue()) || (killAura.autoBlock.getValue() != 6 && killAura.autoBlock.getValue() != 2) || (killAura.autoBlock.getValue() == 5 && killAura.blockTick == 0)) {
-                                        EventManager.call(new AttackEvent(killAura.getTarget()));
-                                                mc.getNetHandler().addToSendQueue(new C0APacketAnimation());
-                                                if (killAura.getTarget() != mc.thePlayer) {
-                                                    mc.getNetHandler().addToSendQueue(new C02PacketUseEntity(killAura.getTarget(), C02PacketUseEntity.Action.ATTACK));
-                                                } else {
-                                                    mc.getNetHandler().addToSendQueue(new C02PacketUseEntity(Objects.requireNonNull(killAura.getTarget()), C02PacketUseEntity.Action.ATTACK));
-                                                }
-                                                mc.thePlayer.motionX *= 0.6D;
-                                                mc.thePlayer.motionZ *= 0.6D;
-                                                mc.thePlayer.setSprinting(false);
-                                    }
-                                } else {
-                                    EventManager.call(new AttackEvent(targetA.entityHit));
-                                    mc.getNetHandler().addToSendQueue(new C0APacketAnimation());
-                                    if (targetA.entityHit != mc.thePlayer) {
-                                                    mc.getNetHandler().addToSendQueue(new C02PacketUseEntity(targetA.entityHit, C02PacketUseEntity.Action.ATTACK));
-                                    } else {
-                                                    mc.getNetHandler().addToSendQueue(new C02PacketUseEntity(Objects.requireNonNull(targetA.entityHit), C02PacketUseEntity.Action.ATTACK));
-                                                }
-                                    mc.thePlayer.motionX *= 0.6D;
-                                    mc.thePlayer.motionZ *= 0.6D;
-                                    mc.thePlayer.setSprinting(false);
-                                }
-                            }
-                        }
-                    }
-                    reduceTick++;
                 }
             }
         }
@@ -336,11 +344,6 @@ public class Velocity extends Module {
     }
     @EventTarget
     public void onMove(MoveInputEvent event) {
-        if (this.isEnabled()){
-                if (handleReset) {
-                    mc.thePlayer.movementInput.moveForward = 1.0F;
-                }
-        }
         if (this.isEnabled() && this.rotatoTickCounter > 0 && this.rotatoTickCounter <= this.rotateTick.getValue()) {
             if (this.autoMove.getValue()) {
                 mc.thePlayer.movementInput.moveForward = 1.0F;
