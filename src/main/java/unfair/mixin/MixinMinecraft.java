@@ -2,6 +2,7 @@ package unfair.mixin;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.multiplayer.PlayerControllerMP;
 import net.minecraft.client.multiplayer.WorldClient;
@@ -13,6 +14,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import unfair.Unfair;
@@ -21,6 +23,7 @@ import unfair.event.types.EventType;
 import unfair.events.*;
 import unfair.init.Initializer;
 import unfair.module.modules.combat.NoHitDelay;
+import unfair.ui.gui.GuiMainMenuClient;
 
 @SideOnly(Side.CLIENT)
 @Mixin({Minecraft.class})
@@ -157,5 +160,24 @@ public abstract class MixinMinecraft {
         if (!event.isCancelled()) {
             inventoryPlayer.changeCurrentItem(slot);
         }
+    }
+    @ModifyVariable(method = "displayGuiScreen", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+    private GuiScreen replaceMainMenu(GuiScreen guiScreen) {
+        if (guiScreen instanceof GuiMainMenu && !(guiScreen instanceof GuiMainMenuClient)) {
+            return new GuiMainMenuClient();
+        }
+        return guiScreen;
+    }
+
+    // LWJGL2 destroys & recreates the window on fullscreen toggle; restoring the
+    // default caption beforehand prevents a DWM hang, then we re-apply to the new HWND.
+    @Inject(method = "toggleFullscreen", at = @At("HEAD"))
+    private void preToggleFullscreen(CallbackInfo ci) {
+        unfair.util.WindowsCaption.reset();
+    }
+
+    @Inject(method = "toggleFullscreen", at = @At("RETURN"))
+    private void postToggleFullscreen(CallbackInfo ci) {
+        unfair.util.WindowsCaption.apply();
     }
 }

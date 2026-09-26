@@ -3,10 +3,12 @@ package unfair.module.modules.movement;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.ai.attributes.IAttributeInstance;
+import unfair.Unfair;
 import unfair.event.EventTarget;
 import unfair.events.TickEvent;
 import unfair.mixin.IAccessorEntityLivingBase;
 import unfair.module.Module;
+import unfair.module.modules.misc.Disabler;
 import unfair.property.properties.BooleanProperty;
 import unfair.util.KeyBindUtil;
 

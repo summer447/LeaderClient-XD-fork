@@ -1,6 +1,7 @@
 package unfair.module;
 
 import unfair.Unfair;
+import unfair.event.EventManager;
 import unfair.event.EventTarget;
 import unfair.event.types.EventType;
 import unfair.events.KeyEvent;
@@ -20,6 +21,7 @@ public class ModuleManager {
     private boolean sound = false;
 
     public ModuleManager() {
+        EventManager.register(this);
         autoRegisterModules();
     }
 
@@ -35,12 +37,9 @@ public class ModuleManager {
 
         for (Class<? extends Module> clazz : moduleClasses) {
             try {
-                Module module = clazz.getDeclaredConstructor().newInstance();
+                Module module = (Module) EventManager.getOrCreate(clazz);
                 modules.put(clazz, module);
-            } catch (Exception e) {
-                System.err.println("Failed to instantiate module: " + clazz.getName());
-                e.printStackTrace();
-            }
+            } catch (Exception ignored) {}
         }
     }
 
@@ -54,7 +53,6 @@ public class ModuleManager {
             while (resources.hasMoreElements()) {
                 URL url = resources.nextElement();
                 if (url.getProtocol().equals("jar")) {
-                    // 从 JAR 文件扫描
                     String jarPath = url.getPath().substring(5, url.getPath().indexOf("!"));
                     try (JarFile jar = new JarFile(jarPath)) {
                         Enumeration<JarEntry> entries = jar.entries();
@@ -74,16 +72,13 @@ public class ModuleManager {
                         }
                     }
                 } else if (url.getProtocol().equals("file")) {
-                    // 从文件系统扫描 (开发环境)
                     java.io.File directory = new java.io.File(url.toURI());
                     if (directory.exists() && directory.isDirectory()) {
                         scanDirectoryForModules(directory, packageName, result);
                     }
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception ignored) {}
 
         return result;
     }

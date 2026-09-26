@@ -21,6 +21,7 @@ public final class SessionUtil {
         } catch (Exception e) {
             // Try SRG name as fallback
             try {
+                //noinspection JavaReflectionMemberAccess
                 Field sessionField = Minecraft.class.getDeclaredField("field_71449_j");
                 sessionField.setAccessible(true);
                 sessionField.set(mc, session);

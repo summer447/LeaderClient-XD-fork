@@ -11,6 +11,7 @@ import unfair.util.ChatUtil;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Config {
     public static Minecraft mc = Minecraft.getMinecraft();
@@ -53,6 +54,11 @@ public class Config {
             }
 
             JsonObject jsonObject = parsed.getAsJsonObject();
+
+            // 一次性迁移：ArrayList 从 HUD 拆分而来，旧配置中这些键仍在 HUD 名下。
+            // ArrayList 节点缺失的同名属性 / toggled / hidden 从 HUD 节点补齐。
+            this.migrateArrayListFromHud(jsonObject);
+
             for (Module module : Unfair.moduleManager.modules.values()) {
                 JsonElement moduleObj = jsonObject.get(module.getName());
                 if (moduleObj != null && moduleObj.isJsonObject()) {
@@ -132,6 +138,59 @@ public class Config {
         } catch (Exception e) {
             ((IAccessorMinecraft) mc).getLogger().error("Error loading config: " + e.getMessage());
             ChatUtil.sendFormatted(String.format("%sConfig couldn't be loaded (&c&o%s&r)&r", Unfair.clientName, file.getName()));
+        }
+    }
+
+    /**
+     * ArrayList 拆分自 HUD 的配置迁移：
+     * 仅在 ArrayList 节点缺少某键、而 HUD 节点存在同名键时复制，新配置不受影响。
+     */
+    private void migrateArrayListFromHud(JsonObject root) {
+        JsonElement hudElem = root.get("HUD");
+        if (hudElem == null || !hudElem.isJsonObject()) {
+            return;
+        }
+        JsonObject hudObj = hudElem.getAsJsonObject();
+
+        Module arrayListModule = null;
+        for (Module module : Unfair.moduleManager.modules.values()) {
+            if ("ArrayList".equals(module.getName())) {
+                arrayListModule = module;
+                break;
+            }
+        }
+        if (arrayListModule == null) {
+            return;
+        }
+
+        JsonObject listObj;
+        if (root.has("ArrayList") && root.get("ArrayList").isJsonObject()) {
+            listObj = root.getAsJsonObject("ArrayList");
+        } else {
+            listObj = new JsonObject();
+        }
+
+        boolean changed = false;
+        List<Property<?>> properties = Unfair.propertyManager.properties.get(arrayListModule.getClass());
+        if (properties != null) {
+            for (Property<?> property : properties) {
+                String name = property.getName();
+                if (!listObj.has(name) && hudObj.has(name)) {
+                    listObj.add(name, hudObj.get(name));
+                    changed = true;
+                }
+            }
+        }
+
+        for (String moduleField : new String[]{"toggled", "hidden"}) {
+            if (!listObj.has(moduleField) && hudObj.has(moduleField)) {
+                listObj.add(moduleField, hudObj.get(moduleField));
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            root.add("ArrayList", listObj);
         }
     }
 

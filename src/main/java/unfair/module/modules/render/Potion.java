@@ -48,7 +48,7 @@ public class Potion extends Module {
         boolean fadingOut;
     }
     private final Map<Integer, AnimData> animationMap = new ConcurrentHashMap<>();
-    private List<PotionEffect> currentEffects = new ArrayList<>();
+    private List<PotionEffect> currentEffects = new java.util.ArrayList<>();
     private long lastFrameTime = System.currentTimeMillis();
 
     // 拖拽状态
@@ -85,7 +85,7 @@ public class Potion extends Module {
     }
 
     private void updateMaxDurations() {
-        List<Integer> toRemove = new ArrayList<>();
+        List<Integer> toRemove = new java.util.ArrayList<>();
         for (Map.Entry<Integer, Integer> entry : potionMaxDurations.entrySet()) {
             if (mc.thePlayer.getActivePotionEffect(net.minecraft.potion.Potion.potionTypes[entry.getKey()]) == null) {
                 toRemove.add(entry.getKey());
@@ -255,7 +255,7 @@ public class Potion extends Module {
         updateMaxDurations();
         updateAnimations(deltaTime);
 
-        List<PotionEffect> renderList = new ArrayList<>(currentEffects);
+        List<PotionEffect> renderList = new java.util.ArrayList<>(currentEffects);
         renderList.sort(Comparator.comparingInt(this::getEffectFullWidth).reversed());
 
         HUD hud = (HUD) Unfair.moduleManager.modules.get(HUD.class);

@@ -62,7 +62,11 @@ public abstract class MixinEntityRenderer {
                 this.slot = new Box<>(this.mc.thePlayer.inventory.currentItem);  // field_71071_by -> inventory, field_70461_c -> currentItem
                 this.mc.thePlayer.inventory.currentItem = slot;
             }
-            if ((killAura = (KillAura) Unfair.moduleManager.modules.get(KillAura.class)).isEnabled() && killAura.isBlocking()) {
+            killAura = (KillAura) Unfair.moduleManager.modules.get(KillAura.class);
+            blockHit = (BlockHit) Unfair.moduleManager.modules.get(BlockHit.class);
+            // KillAura 假格挡 或 BlockHit 开启视觉格挡时，伪装手中物品为使用中以渲染格挡动作
+            if (killAura.isEnabled() && killAura.isBlocking()
+                    || blockHit.isEnabled() && blockHit.visualBlocking.getValue() && blockHit.isBlocking()) {
                 this.using = new Box<>(((IAccessorEntityPlayer) this.mc.thePlayer).getItemInUse());
                 ((IAccessorEntityPlayer) this.mc.thePlayer).setItemInUse(this.mc.thePlayer.inventory.getCurrentItem());  // func_70448_g() -> getCurrentItem()
                 this.useCount = new Box<>(((IAccessorEntityPlayer) this.mc.thePlayer).getItemInUseCount());

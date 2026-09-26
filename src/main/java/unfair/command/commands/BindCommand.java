@@ -64,6 +64,8 @@ public class BindCommand extends Command {
                 Module module = Unfair.moduleManager.getModule(args.get(1));
                 if (module == null) {
                     ChatUtil.sendFormatted(String.format("%sModule not found (&o%s&r)&r", Unfair.clientName, args.get(1)));
+                } else if (!module.isBindable()) {
+                    ChatUtil.sendFormatted(String.format("%s&o%s&r cannot be bound", Unfair.clientName, module.getName()));
                 } else {
                     module.setKey(keyIndex);
                     if (keyIndex == 0) {

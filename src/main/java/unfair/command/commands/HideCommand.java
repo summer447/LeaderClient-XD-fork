@@ -8,6 +8,7 @@ import unfair.util.ChatUtil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Objects;
 
 public class HideCommand extends Command {
     public HideCommand() {
@@ -31,7 +32,7 @@ public class HideCommand extends Command {
                 ChatUtil.sendFormatted(String.format("%s&o%s&r has been hidden in HUD&r", Unfair.clientName, module.getName()));
             }
         } else {
-            for (Module module : Unfair.moduleManager.modules.values()) {
+            for (Module module : Objects.requireNonNull(Unfair.moduleManager).modules.values()) {
                 module.setHidden(true);
             }
             ChatUtil.sendFormatted(String.format("%sAll modules have been hidden in HUD&r", Unfair.clientName));

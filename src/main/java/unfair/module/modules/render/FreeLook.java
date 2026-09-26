@@ -1,11 +1,11 @@
 package unfair.module.modules.render;
 
 import net.minecraft.client.Minecraft;
+import org.lwjgl.input.Mouse;
 import unfair.event.EventTarget;
 import unfair.events.TickEvent;
 import unfair.module.Module;
 import unfair.property.properties.BooleanProperty;
-import unfair.util.KeyBindUtil;
 
 public class FreeLook extends Module {
     public static FreeLook INSTANCE;
@@ -23,13 +23,18 @@ public class FreeLook extends Module {
         INSTANCE = this;
     }
 
+    @Override
+    public boolean isBindable() {
+        return false;
+    }
+
     @EventTarget
     public void onTick(TickEvent event) {
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.thePlayer == null) return;
-
+        boolean middleMouseButtonDown = Mouse.isButtonDown(2);
         if (hold.getValue()) {
-            boolean keyDown = KeyBindUtil.isKeyDown(this.getKey());
+            boolean keyDown = middleMouseButtonDown;
             if (keyDown && !this.isEnabled()) {
                 setEnabled(true);
             } else if (!keyDown && this.isEnabled()) {
@@ -59,7 +64,7 @@ public class FreeLook extends Module {
                 return;
             }
 
-            boolean isKeyDown = mc.currentScreen == null && KeyBindUtil.isKeyDown(this.getKey());
+            boolean isKeyDown = mc.currentScreen == null && middleMouseButtonDown;
             if (isKeyDown) {
                 if (!this.active) {
                     this.active = true;

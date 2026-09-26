@@ -2,6 +2,7 @@ import org.apache.commons.lang3.SystemUtils
 plugins {
     idea
     java
+    kotlin("jvm") version "1.9.24"
     id("gg.essential.loom") version "0.10.0.+"
     id("dev.architectury.architectury-pack200") version "0.1.3"
     id("com.github.johnrengelman.shadow") version "8.1.1"
@@ -17,6 +18,11 @@ val transformerFile = file("src/main/resources/accesstransformer.cfg")
 // Toolchains:
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(8))
+}
+kotlin {
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(8))
+    }
 }
 // Minecraft configuration:
 loom {
@@ -52,7 +58,9 @@ loom {
     }
 }
 sourceSets.main {
-    output.setResourcesDir(sourceSets.main.flatMap { it.java.classesDirectory })
+    //output.setResourcesDir(sourceSets.main.flatMap { it.java.classesDirectory })
+    java.srcDirs(layout.projectDirectory.dir("src/main/kotlin"))
+    kotlin.destinationDirectory.set(java.destinationDirectory)
 }
 // Dependencies:
 repositories {
@@ -68,6 +76,7 @@ dependencies {
     minecraft("com.mojang:minecraft:1.8.9")
     mappings("de.oceanlabs.mcp:mcp_stable:22-1.8.9")
     forge("net.minecraftforge:forge:1.8.9-11.15.1.2318-1.8.9")
+    shadowImpl(kotlin("stdlib"))
     // If you don't want mixins, remove these lines
     shadowImpl("org.spongepowered:mixin:0.7.11-SNAPSHOT") {
         isTransitive = false
@@ -115,6 +124,8 @@ tasks.shadowJar {
     destinationDirectory.set(layout.buildDirectory.dir("intermediates"))
     archiveClassifier.set("non-obfuscated-with-deps")
     configurations = listOf(shadowImpl)
+    relocate("kotlin", "$baseGroup.deps.kotlin")
+    relocate("org.jetbrains.annotations", "$baseGroup.deps.annotations")
     doLast {
         configurations.forEach {
             println("Copying dependencies into mod: ${it.files}")

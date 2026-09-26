@@ -30,7 +30,6 @@ public class Tracers extends Module {
     public final BooleanProperty drawArrows = new BooleanProperty("Arrows", false);
     public final PercentProperty opacity = new PercentProperty("Opacity", 100);
     public final BooleanProperty showPlayers = new BooleanProperty("Players", true);
-    public final BooleanProperty showFriends = new BooleanProperty("Friends", true);
     public final BooleanProperty showEnemies = new BooleanProperty("Enemies", true);
     public final BooleanProperty showBots = new BooleanProperty("Bots", false);
 
@@ -46,8 +45,6 @@ public class Tracers extends Module {
         } else if (entityPlayer != mc.thePlayer && entityPlayer != mc.getRenderViewEntity()) {
             if (TeamUtil.isBot(entityPlayer)) {
                 return this.showBots.getValue();
-            } else if (TeamUtil.isFriend(entityPlayer)) {
-                return this.showFriends.getValue();
             } else {
                 return TeamUtil.isTarget(entityPlayer) ? this.showEnemies.getValue() : this.showPlayers.getValue();
             }
@@ -57,10 +54,7 @@ public class Tracers extends Module {
     }
 
     private Color getEntityColor(EntityPlayer entityPlayer, float alpha) {
-        if (TeamUtil.isFriend(entityPlayer)) {
-            Color color = Unfair.friendManager.getColor();
-            return new Color((float) color.getRed() / 255.0F, (float) color.getGreen() / 255.0F, (float) color.getBlue() / 255.0F, alpha);
-        } else if (TeamUtil.isTarget(entityPlayer)) {
+        if (TeamUtil.isTarget(entityPlayer)) {
             Color color = Unfair.targetManager.getColor();
             return new Color((float) color.getRed() / 255.0F, (float) color.getGreen() / 255.0F, (float) color.getBlue() / 255.0F, alpha);
         } else {

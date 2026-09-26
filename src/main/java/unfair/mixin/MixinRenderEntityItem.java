@@ -25,7 +25,6 @@ import java.util.Random;
 @Mixin(RenderEntityItem.class)
 public abstract class MixinRenderEntityItem extends Render<EntityItem> {
 
-    // 映射原版的私有字段
     @Shadow private Random field_177079_e;
     @Shadow @Final
     private RenderItem itemRenderer;
@@ -35,10 +34,6 @@ public abstract class MixinRenderEntityItem extends Render<EntityItem> {
         super(renderManager);
     }
 
-    /**
-     * 接管 doRender 方法
-     * 使用 @Inject 在方法头部拦截，如果开启了物理掉落，则执行自定义逻辑并取消原版后续逻辑
-     */
     @Inject(method = "doRender", at = @At("HEAD"), cancellable = true)
     public void onDoRender(EntityItem entity, double x, double y, double z, float entityYaw, float partialTicks, CallbackInfo ci) {
         if (Unfair.moduleManager.modules.get(ItemPhysics.class).isEnabled()) {
@@ -47,7 +42,6 @@ public abstract class MixinRenderEntityItem extends Render<EntityItem> {
         }
     }
 
-    // 将你代码中的 physicsRender 逻辑迁移到这里
     private void doPhysicsRender(EntityItem entity, double x, double y, double z, float entityYaw, float partialTicks) {
         Minecraft mc = Minecraft.getMinecraft();
 
@@ -67,7 +61,7 @@ public abstract class MixinRenderEntityItem extends Render<EntityItem> {
         GlStateManager.pushMatrix();
 
         IBakedModel ibakedmodel = this.itemRenderer.getItemModelMesher().getItemModel(itemstack);
-        int j = this.func_177078_a(itemstack); // 调用原版的堆叠计算方法
+        int j = this.func_177078_a(itemstack);
 
         GlStateManager.translate((float) x, (float) y, (float) z);
 

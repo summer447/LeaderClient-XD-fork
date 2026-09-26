@@ -34,7 +34,6 @@ public class ESP extends Module {
     public final ModeProperty color = new ModeProperty("Color", 0, new String[]{"Default", "Teams", "Hud"});
     public final ModeProperty healthBar = new ModeProperty("Health Bar", 0, new String[]{"None", "2d", "Raven"});
     public final BooleanProperty players = new BooleanProperty("Players", true);
-    public final BooleanProperty friends = new BooleanProperty("Friends", true);
     public final BooleanProperty enemies = new BooleanProperty("Enemies", true);
     public final BooleanProperty self = new BooleanProperty("Self", false);
     public final BooleanProperty bots = new BooleanProperty("Bots", false);
@@ -58,8 +57,6 @@ public class ESP extends Module {
         } else if (entityPlayer != mc.thePlayer && entityPlayer != mc.getRenderViewEntity()) {
             if (TeamUtil.isBot(entityPlayer)) {
                 return this.bots.getValue();
-            } else if (TeamUtil.isFriend(entityPlayer)) {
-                return this.friends.getValue();
             } else {
                 return TeamUtil.isTarget(entityPlayer) ? this.enemies.getValue() : this.players.getValue();
             }
@@ -69,9 +66,7 @@ public class ESP extends Module {
     }
 
     private Color getEntityColor(EntityPlayer entityPlayer) {
-        if (TeamUtil.isFriend(entityPlayer)) {
-            return Unfair.friendManager.getColor();
-        } else if (TeamUtil.isTarget(entityPlayer)) {
+        if (TeamUtil.isTarget(entityPlayer)) {
             return Unfair.targetManager.getColor();
         } else {
             switch (this.color.getValue()) {

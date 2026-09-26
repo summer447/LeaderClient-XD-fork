@@ -20,7 +20,6 @@ import unfair.util.TeamUtil;
 public class Chams extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
     public final BooleanProperty players = new BooleanProperty("Players", true);
-    public final BooleanProperty friends = new BooleanProperty("Friends", true);
     public final BooleanProperty enemies = new BooleanProperty("Enemies", true);
     public final BooleanProperty bosses = new BooleanProperty("Bosses", false);
     public final BooleanProperty mobs = new BooleanProperty("Mobs", false);
@@ -44,8 +43,6 @@ public class Chams extends Module {
             if (entityLivingBase != mc.thePlayer && entityLivingBase != mc.getRenderViewEntity()) {
                 if (TeamUtil.isBot((EntityPlayer) entityLivingBase)) {
                     return this.bots.getValue();
-                } else if (TeamUtil.isFriend((EntityPlayer) entityLivingBase)) {
-                    return this.friends.getValue();
                 } else {
                     return TeamUtil.isTarget((EntityPlayer) entityLivingBase) ? this.enemies.getValue() : this.players.getValue();
                 }

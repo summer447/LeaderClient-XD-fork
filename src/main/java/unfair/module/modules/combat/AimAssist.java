@@ -18,6 +18,7 @@ import unfair.util.*;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class AimAssist extends Module {
@@ -50,8 +51,6 @@ public class AimAssist extends Module {
                 return false;
             } else if (RotationUtil.rayTrace(entityPlayer) != null) {
                 return false;
-            } else if (TeamUtil.isFriend(entityPlayer)) {
-                return false;
             } else {
                 return (!this.team.getValue() || !TeamUtil.isSameTeam(entityPlayer)) && (!this.botChecks.getValue() || !TeamUtil.isBot(entityPlayer));
             }
@@ -61,7 +60,7 @@ public class AimAssist extends Module {
     }
 
     private boolean isInReach(EntityPlayer entityPlayer) {
-        Reach reach = (Reach) Unfair.moduleManager.modules.get(Reach.class);
+        Reach reach = (Reach) Objects.requireNonNull(Unfair.moduleManager).modules.get(Reach.class);
         double distance = reach.isEnabled() ? (double) reach.range.getValue() : 3.0;
         return RotationUtil.distanceToEntity(entityPlayer) <= distance;
     }

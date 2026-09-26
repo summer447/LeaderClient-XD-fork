@@ -23,6 +23,8 @@ import unfair.module.modules.movement.Sprint;
 import unfair.property.properties.BooleanProperty;
 import unfair.property.properties.ModeProperty;
 import unfair.ui.clickgui.dropdown.DropDownGui;
+import unfair.ui.clickgui.oldgui.ClickGui;
+import unfair.ui.clickgui.panel.PanelGui;
 import unfair.util.KeyBindUtil;
 import unfair.util.PacketUtil;
 
@@ -88,7 +90,7 @@ public class InvWalk extends Module {
     public void onUpdate(UpdateEvent event) {
         if (!this.isEnabled() || event.getType() != EventType.PRE) return;
 
-        if (mc.currentScreen instanceof DropDownGui && this.guiEnabled.getValue()) {
+        if (mc.currentScreen instanceof DropDownGui || mc.currentScreen instanceof ClickGui || mc.currentScreen instanceof PanelGui && this.guiEnabled.getValue()) {
             pressMovementKeys();
             return;
         }

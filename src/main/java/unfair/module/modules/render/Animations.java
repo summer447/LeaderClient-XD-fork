@@ -10,7 +10,7 @@ public class Animations extends Module {
 
     public final ModeProperty mode = new ModeProperty(
             "mode",
-            2,
+            37,
             new String[]{
                     "Test",
                     "1_8",
@@ -57,7 +57,7 @@ public class Animations extends Module {
             }
     );
     public final BooleanProperty cancelEquip = new BooleanProperty("Cancel Equip", false);
-    public final BooleanProperty cancelEquipBlockingOnly = new BooleanProperty("Cancel Equip Blocking Only", true, () -> this.cancelEquip.getValue());
+    public final BooleanProperty cancelEquipBlockingOnly = new BooleanProperty("Cancel Equip Blocking Only", true, this.cancelEquip::getValue);
     public final FloatProperty itemSize = new FloatProperty("Item Size", 0.0F, -0.5F, 0.5F);
     public final FloatProperty itemFov = new FloatProperty("Item Fov", 0.0F, -5.0F, 5.0F);
     public final FloatProperty itemPosX = new FloatProperty("Item Pos X", 0.0F, -1.0F, 1.0F);

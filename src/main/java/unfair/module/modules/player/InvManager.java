@@ -22,6 +22,7 @@ import java.util.LinkedHashSet;
 
 public class InvManager extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
+
     public final IntProperty minDelay = new IntProperty("Min Delay", 0, 0, 20);
     public final IntProperty maxDelay = new IntProperty("Max Delay", 0, 0, 20);
     public final IntProperty openDelay = new IntProperty("Open Delay", 0, 0, 20);
@@ -29,6 +30,7 @@ public class InvManager extends Module {
     public final BooleanProperty autoClose = new BooleanProperty("Auto Close", false);
     public final BooleanProperty autoArmor = new BooleanProperty("Auto Armor", true);
     public final BooleanProperty dropTrash = new BooleanProperty("Drop Trash", true);
+    public final BooleanProperty dropPotions = new BooleanProperty("Drop Potions", true);
     public final IntProperty swordSlot = new IntProperty("Sword Slot", 1, 0, 9);
     public final IntProperty pickaxeSlot = new IntProperty("Pickaxe Slot", 8, 0, 9);
     public final IntProperty shovelSlot = new IntProperty("Shovel Slot", 7, 0, 9);
@@ -38,9 +40,9 @@ public class InvManager extends Module {
     public final IntProperty throwsSlot = new IntProperty("Throws Slot", 4, 0, 9);
     public final IntProperty throwsAmount = new IntProperty("Throws Amount", 64, 16, 320);
     public final IntProperty gappleSlot = new IntProperty("Gapple Slot", 3, 0, 9);
-     public final BooleanProperty keepOre = new BooleanProperty("Keep Ore", true);
-    public final BooleanProperty keepWaterBucket = new BooleanProperty("Keep Water Bucket", true);
-    public final BooleanProperty keepBowAndArrows = new BooleanProperty("Keep Bow And Arrows", true);
+    public final BooleanProperty keepOre = new BooleanProperty("Keep Ore", false);
+    public final BooleanProperty keepWaterBucket = new BooleanProperty("Keep Water Bucket", false);
+    public final BooleanProperty keepBowAndArrows = new BooleanProperty("Keep Bow And Arrows", false);
     public final IntProperty bowSlot = new IntProperty("Bow Slot", 5, 0, 9, keepBowAndArrows::getValue);
 
     private int actionDelay = 0;
@@ -92,6 +94,11 @@ public class InvManager extends Module {
         return stack.getItem() instanceof ItemAppleGold;
     }
 
+    private boolean isPotion(ItemStack stack) {
+        if (stack == null) return false;
+        return stack.getItem() instanceof ItemPotion;
+    }
+
     private boolean isOre(ItemStack stack) {
         if (stack == null) return false;
         Item item = stack.getItem();
@@ -101,13 +108,7 @@ public class InvManager extends Module {
                 return true;
             }
         }
-        return item == net.minecraft.init.Items.diamond
-                || item == net.minecraft.init.Items.emerald
-                || item == net.minecraft.init.Items.iron_ingot
-                || item == net.minecraft.init.Items.gold_ingot
-                || item == net.minecraft.init.Items.coal
-                || item == net.minecraft.init.Items.quartz
-                || item == net.minecraft.init.Items.redstone;
+        return item == net.minecraft.init.Items.diamond || item == net.minecraft.init.Items.emerald || item == net.minecraft.init.Items.iron_ingot || item == net.minecraft.init.Items.gold_ingot || item == net.minecraft.init.Items.coal || item == net.minecraft.init.Items.quartz || item == net.minecraft.init.Items.redstone;
     }
 
     private boolean isWaterBucket(ItemStack stack) {
@@ -238,35 +239,28 @@ public class InvManager extends Module {
         }
 
         if (preferredSwordHotbarSlot >= 0 && preferredSwordHotbarSlot <= 8 && (equippedSwordSlot != -1 || inventorySwordSlot != -1)) {
-            if (equippedSwordSlot != preferredSwordHotbarSlot && inventorySwordSlot != preferredSwordHotbarSlot)
-                return false;
+            if (equippedSwordSlot != preferredSwordHotbarSlot && inventorySwordSlot != preferredSwordHotbarSlot) return false;
         }
         if (preferredPickaxeHotbarSlot >= 0 && preferredPickaxeHotbarSlot <= 8 && (equippedPickaxeSlot != -1 || inventoryPickaxeSlot != -1)) {
-            if (equippedPickaxeSlot != preferredPickaxeHotbarSlot && inventoryPickaxeSlot != preferredPickaxeHotbarSlot)
-                return false;
+            if (equippedPickaxeSlot != preferredPickaxeHotbarSlot && inventoryPickaxeSlot != preferredPickaxeHotbarSlot) return false;
         }
         if (preferredShovelHotbarSlot >= 0 && preferredShovelHotbarSlot <= 8 && (equippedShovelSlot != -1 || inventoryShovelSlot != -1)) {
-            if (equippedShovelSlot != preferredShovelHotbarSlot && inventoryShovelSlot != preferredShovelHotbarSlot)
-                return false;
+            if (equippedShovelSlot != preferredShovelHotbarSlot && inventoryShovelSlot != preferredShovelHotbarSlot) return false;
         }
         if (preferredAxeHotbarSlot >= 0 && preferredAxeHotbarSlot <= 8 && (equippedAxeSlot != -1 || inventoryAxeSlot != -1)) {
-            if (equippedAxeSlot != preferredAxeHotbarSlot && inventoryAxeSlot != preferredAxeHotbarSlot)
-                return false;
+            if (equippedAxeSlot != preferredAxeHotbarSlot && inventoryAxeSlot != preferredAxeHotbarSlot) return false;
         }
         if (preferredBlocksHotbarSlot >= 0 && preferredBlocksHotbarSlot <= 8 && inventoryBlocksSlot != -1) {
             if (inventoryBlocksSlot != preferredBlocksHotbarSlot) return false;
         }
         if (preferredThrowsHotbarSlot >= 0 && preferredThrowsHotbarSlot <= 8 && (equippedThrowsSlot != -1 || inventoryThrowsSlot != -1)) {
-            if (equippedThrowsSlot != preferredThrowsHotbarSlot && inventoryThrowsSlot != preferredThrowsHotbarSlot)
-                return false;
+            if (equippedThrowsSlot != preferredThrowsHotbarSlot && inventoryThrowsSlot != preferredThrowsHotbarSlot) return false;
         }
         if (preferredGappleHotbarSlot >= 0 && preferredGappleHotbarSlot <= 8 && (equippedGappleSlot != -1 || inventoryGappleSlot != -1)) {
-            if (equippedGappleSlot != preferredGappleHotbarSlot && inventoryGappleSlot != preferredGappleHotbarSlot)
-                return false;
+            if (equippedGappleSlot != preferredGappleHotbarSlot && inventoryGappleSlot != preferredGappleHotbarSlot) return false;
         }
         if (keepBowAndArrows.getValue() && preferredBowHotbarSlot >= 0 && preferredBowHotbarSlot <= 8 && (equippedBowSlot != -1 || inventoryBowSlot != -1)) {
-            if (equippedBowSlot != preferredBowHotbarSlot && inventoryBowSlot != preferredBowHotbarSlot)
-                return false;
+            if (equippedBowSlot != preferredBowHotbarSlot && inventoryBowSlot != preferredBowHotbarSlot) return false;
         }
 
         if (this.dropTrash.getValue()) {
@@ -276,21 +270,12 @@ public class InvManager extends Module {
                 equippedArmorSlots.set(i, ItemUtil.findArmorInventorySlot(i, true));
                 inventoryArmorSlots.set(i, ItemUtil.findArmorInventorySlot(i, false));
             }
-
             int currentBlockCount = this.getStackSize(inventoryBlocksSlot);
             int totalThrowsCount = this.getTotalThrowsCount();
 
             if (totalThrowsCount > this.throwsAmount.getValue()) {
                 for (int i = 0; i < 36; i++) {
-                    if (!equippedArmorSlots.contains(i) && !inventoryArmorSlots.contains(i)
-                            && equippedSwordSlot != i && inventorySwordSlot != i
-                            && equippedPickaxeSlot != i && inventoryPickaxeSlot != i
-                            && equippedShovelSlot != i && inventoryShovelSlot != i
-                            && equippedAxeSlot != i && inventoryAxeSlot != i
-                            && inventoryBlocksSlot != i && equippedThrowsSlot != i
-                            && inventoryThrowsSlot != i && equippedGappleSlot != i
-                            && inventoryGappleSlot != i
-                            && equippedBowSlot != i && inventoryBowSlot != i) {
+                    if (!equippedArmorSlots.contains(i) && !inventoryArmorSlots.contains(i) && equippedSwordSlot != i && inventorySwordSlot != i && equippedPickaxeSlot != i && inventoryPickaxeSlot != i && equippedShovelSlot != i && inventoryShovelSlot != i && equippedAxeSlot != i && inventoryAxeSlot != i && inventoryBlocksSlot != i && equippedThrowsSlot != i && inventoryThrowsSlot != i && equippedGappleSlot != i && inventoryGappleSlot != i && equippedBowSlot != i && inventoryBowSlot != i) {
                         ItemStack stack = mc.thePlayer.inventory.getStackInSlot(i);
                         if (this.isThrowable(stack)) return false;
                     }
@@ -298,28 +283,21 @@ public class InvManager extends Module {
             }
 
             for (int i = 0; i < 36; i++) {
-                if (!equippedArmorSlots.contains(i) && !inventoryArmorSlots.contains(i)
-                        && equippedSwordSlot != i && inventorySwordSlot != i
-                        && equippedPickaxeSlot != i && inventoryPickaxeSlot != i
-                        && equippedShovelSlot != i && inventoryShovelSlot != i
-                        && equippedAxeSlot != i && inventoryAxeSlot != i
-                        && inventoryBlocksSlot != i && equippedThrowsSlot != i
-                        && inventoryThrowsSlot != i && equippedGappleSlot != i
-                        && inventoryGappleSlot != i
-                        && equippedBowSlot != i && inventoryBowSlot != i) {
+                if (!equippedArmorSlots.contains(i) && !inventoryArmorSlots.contains(i) && equippedSwordSlot != i && inventorySwordSlot != i && equippedPickaxeSlot != i && inventoryPickaxeSlot != i && equippedShovelSlot != i && inventoryShovelSlot != i && equippedAxeSlot != i && inventoryAxeSlot != i && inventoryBlocksSlot != i && equippedThrowsSlot != i && inventoryThrowsSlot != i && equippedGappleSlot != i && inventoryGappleSlot != i && equippedBowSlot != i && inventoryBowSlot != i) {
                     ItemStack stack = mc.thePlayer.inventory.getStackInSlot(i);
                     if (stack != null) {
                         boolean isBlock = ItemUtil.isBlock(stack);
                         boolean isThrowable = this.isThrowable(stack);
                         boolean isGapple = this.isGapple(stack);
                         boolean isOre = this.isOre(stack);
+                        boolean isPotionItem = this.isPotion(stack);
                         boolean isProtectedWater = keepWaterBucket.getValue() && isWaterBucket(stack);
                         boolean isProtectedBowArrow = keepBowAndArrows.getValue() && isBowOrArrow(stack);
 
                         if (!keepOre.getValue() && isOre) return false;
-                        else if (!isThrowable && !isOre && !isGapple && !isProtectedWater && !isProtectedBowArrow
-                                && (ItemUtil.isNotSpecialItem(stack) || (isBlock && currentBlockCount >= this.blocks.getValue())))
-                            return false;
+                        else if (dropPotions.getValue() && isPotionItem) return false;
+                        else if (!isThrowable && !isOre && !isGapple && !isProtectedWater && !isProtectedBowArrow && (ItemUtil.isNotSpecialItem(stack) || (isBlock && currentBlockCount >= this.blocks.getValue()))) return false;
+
                         if (isBlock) currentBlockCount += stack.stackSize;
                     }
                 }
@@ -337,7 +315,6 @@ public class InvManager extends Module {
             if (this.oDelay > 0) {
                 this.oDelay--;
             }
-
             boolean isInventoryOpen = (mc.currentScreen instanceof GuiInventory);
             if (!isInventoryOpen) {
                 this.inventoryOpen = false;
@@ -403,7 +380,9 @@ public class InvManager extends Module {
                                     }
                                 }
                             }
+
                             LinkedHashSet<Integer> usedHotbarSlots = new LinkedHashSet<>();
+                            // Sword
                             if (preferredSwordHotbarSlot >= 0 && preferredSwordHotbarSlot <= 8 && (equippedSwordSlot != -1 || inventorySwordSlot != -1)) {
                                 usedHotbarSlots.add(preferredSwordHotbarSlot);
                                 if (equippedSwordSlot != preferredSwordHotbarSlot && inventorySwordSlot != preferredSwordHotbarSlot) {
@@ -412,6 +391,7 @@ public class InvManager extends Module {
                                     return;
                                 }
                             }
+                            // Pickaxe
                             if (preferredPickaxeHotbarSlot >= 0 && preferredPickaxeHotbarSlot <= 8 && !usedHotbarSlots.contains(preferredPickaxeHotbarSlot) && (equippedPickaxeSlot != -1 || inventoryPickaxeSlot != -1)) {
                                 usedHotbarSlots.add(preferredPickaxeHotbarSlot);
                                 if (equippedPickaxeSlot != preferredPickaxeHotbarSlot && inventoryPickaxeSlot != preferredPickaxeHotbarSlot) {
@@ -420,6 +400,7 @@ public class InvManager extends Module {
                                     return;
                                 }
                             }
+                            // Shovel
                             if (preferredShovelHotbarSlot >= 0 && preferredShovelHotbarSlot <= 8 && !usedHotbarSlots.contains(preferredShovelHotbarSlot) && (equippedShovelSlot != -1 || inventoryShovelSlot != -1)) {
                                 usedHotbarSlots.add(preferredShovelHotbarSlot);
                                 if (equippedShovelSlot != preferredShovelHotbarSlot && inventoryShovelSlot != preferredShovelHotbarSlot) {
@@ -428,6 +409,7 @@ public class InvManager extends Module {
                                     return;
                                 }
                             }
+                            // Axe
                             if (preferredAxeHotbarSlot >= 0 && preferredAxeHotbarSlot <= 8 && !usedHotbarSlots.contains(preferredAxeHotbarSlot) && (equippedAxeSlot != -1 || inventoryAxeSlot != -1)) {
                                 usedHotbarSlots.add(preferredAxeHotbarSlot);
                                 if (equippedAxeSlot != preferredAxeHotbarSlot && inventoryAxeSlot != preferredAxeHotbarSlot) {
@@ -436,6 +418,7 @@ public class InvManager extends Module {
                                     return;
                                 }
                             }
+                            // Blocks
                             if (preferredBlocksHotbarSlot >= 0 && preferredBlocksHotbarSlot <= 8 && !usedHotbarSlots.contains(preferredBlocksHotbarSlot) && inventoryBlocksSlot != -1) {
                                 usedHotbarSlots.add(preferredBlocksHotbarSlot);
                                 if (inventoryBlocksSlot != preferredBlocksHotbarSlot) {
@@ -443,6 +426,7 @@ public class InvManager extends Module {
                                     return;
                                 }
                             }
+                            // Throws
                             if (preferredThrowsHotbarSlot >= 0 && preferredThrowsHotbarSlot <= 8 && !usedHotbarSlots.contains(preferredThrowsHotbarSlot) && (equippedThrowsSlot != -1 || inventoryThrowsSlot != -1)) {
                                 usedHotbarSlots.add(preferredThrowsHotbarSlot);
                                 if (equippedThrowsSlot != preferredThrowsHotbarSlot && inventoryThrowsSlot != preferredThrowsHotbarSlot) {
@@ -451,6 +435,7 @@ public class InvManager extends Module {
                                     return;
                                 }
                             }
+                            // Gapple
                             if (preferredGappleHotbarSlot >= 0 && preferredGappleHotbarSlot <= 8 && !usedHotbarSlots.contains(preferredGappleHotbarSlot) && (equippedGappleSlot != -1 || inventoryGappleSlot != -1)) {
                                 usedHotbarSlots.add(preferredGappleHotbarSlot);
                                 if (equippedGappleSlot != preferredGappleHotbarSlot && inventoryGappleSlot != preferredGappleHotbarSlot) {
@@ -459,6 +444,7 @@ public class InvManager extends Module {
                                     return;
                                 }
                             }
+                            // Bow
                             if (keepBowAndArrows.getValue() && preferredBowHotbarSlot >= 0 && preferredBowHotbarSlot <= 8 && !usedHotbarSlots.contains(preferredBowHotbarSlot) && (equippedBowSlot != -1 || inventoryBowSlot != -1)) {
                                 usedHotbarSlots.add(preferredBowHotbarSlot);
                                 if (equippedBowSlot != preferredBowHotbarSlot && inventoryBowSlot != preferredBowHotbarSlot) {
@@ -467,6 +453,7 @@ public class InvManager extends Module {
                                     return;
                                 }
                             }
+
                         } else if (this.mode.getValue() == 1) {
                             if (this.autoArmor.getValue()) {
                                 for (int i = 0; i < 4; i++) {
@@ -512,21 +499,13 @@ public class InvManager extends Module {
                             int invGappleDrop = findGappleSlot(gappleSlot.getValue() - 1, false);
                             int eqBowDrop = findBowSlot(bowSlot.getValue() - 1, true);
                             int invBowDrop = findBowSlot(bowSlot.getValue() - 1, false);
-
                             int currentBlockCount = getStackSize(invBlocksDrop);
                             int totalThrowsCount = getTotalThrowsCount();
 
+                            // Drop excess throws
                             if (totalThrowsCount > throwsAmount.getValue()) {
                                 for (int i = 35; i >= 0; i--) {
-                                    if (!eqArmor.contains(i) && !invArmor.contains(i)
-                                            && eqSwordDrop != i && invSwordDrop != i
-                                            && eqPickDrop != i && invPickDrop != i
-                                            && eqShovelDrop != i && invShovelDrop != i
-                                            && eqAxeDrop != i && invAxeDrop != i
-                                            && invBlocksDrop != i && eqThrowsDrop != i
-                                            && invThrowsDrop != i && eqGappleDrop != i
-                                            && invGappleDrop != i
-                                            && eqBowDrop != i && invBowDrop != i) {
+                                    if (!eqArmor.contains(i) && !invArmor.contains(i) && eqSwordDrop != i && invSwordDrop != i && eqPickDrop != i && invPickDrop != i && eqShovelDrop != i && invShovelDrop != i && eqAxeDrop != i && invAxeDrop != i && invBlocksDrop != i && eqThrowsDrop != i && invThrowsDrop != i && eqGappleDrop != i && invGappleDrop != i && eqBowDrop != i && invBowDrop != i) {
                                         ItemStack stack = mc.thePlayer.inventory.getStackInSlot(i);
                                         if (isThrowable(stack)) {
                                             itemsToDrop.add(i);
@@ -534,40 +513,39 @@ public class InvManager extends Module {
                                     }
                                 }
                             }
+
+                            // Collect generic trash
                             for (int i = 0; i < 36; i++) {
-                                if (!eqArmor.contains(i) && !invArmor.contains(i)
-                                        && eqSwordDrop != i && invSwordDrop != i
-                                        && eqPickDrop != i && invPickDrop != i
-                                        && eqShovelDrop != i && invShovelDrop != i
-                                        && eqAxeDrop != i && invAxeDrop != i
-                                        && invBlocksDrop != i && eqThrowsDrop != i
-                                        && invThrowsDrop != i && eqGappleDrop != i
-                                        && invGappleDrop != i
-                                        && eqBowDrop != i && invBowDrop != i
-                                        && !itemsToDrop.contains(i)) {
+                                if (!eqArmor.contains(i) && !invArmor.contains(i) && eqSwordDrop != i && invSwordDrop != i && eqPickDrop != i && invPickDrop != i && eqShovelDrop != i && invShovelDrop != i && eqAxeDrop != i && invAxeDrop != i && invBlocksDrop != i && eqThrowsDrop != i && invThrowsDrop != i && eqGappleDrop != i && invGappleDrop != i && eqBowDrop != i && invBowDrop != i && !itemsToDrop.contains(i)) {
                                     ItemStack stack = mc.thePlayer.inventory.getStackInSlot(i);
                                     if (stack != null) {
                                         boolean isBlock = ItemUtil.isBlock(stack);
                                         boolean isThrowable = isThrowable(stack);
                                         boolean isGapple = isGapple(stack);
                                         boolean isOre = isOre(stack);
+                                        boolean isPotionItem = isPotion(stack); // New check
                                         boolean isProtectedWater = keepWaterBucket.getValue() && isWaterBucket(stack);
                                         boolean isProtectedBowArrow = keepBowAndArrows.getValue() && isBowOrArrow(stack);
 
                                         if (!keepOre.getValue() && isOre) {
                                             itemsToDrop.add(i);
-                                        } else if (!isThrowable && !isOre && !isGapple && !isProtectedWater && !isProtectedBowArrow
-                                                && (ItemUtil.isNotSpecialItem(stack) || (isBlock && currentBlockCount >= blocks.getValue()))) {
+                                        } else if (dropPotions.getValue() && isPotionItem) {
+                                            itemsToDrop.add(i); // New drop
+                                        } else if (!isThrowable && !isOre && !isGapple && !isProtectedWater && !isProtectedBowArrow && (ItemUtil.isNotSpecialItem(stack) || (isBlock && currentBlockCount >= blocks.getValue()))) {
                                             itemsToDrop.add(i);
                                         }
                                         if (isBlock) currentBlockCount += stack.stackSize;
                                     }
                                 }
                             }
+
+                            // Execute drops
                             for (int slot : itemsToDrop) {
                                 clickSlot(mc.thePlayer.inventoryContainer.windowId, convertSlotIndex(slot), 1, 4);
                             }
+
                             LinkedHashSet<Integer> usedHotbarSlots = new LinkedHashSet<>();
+                            // Instant sorting logic (same as normal mode but without returns)
                             int prefSword = swordSlot.getValue() - 1;
                             if (prefSword >= 0 && prefSword <= 8) {
                                 int eqSword = ItemUtil.findSwordInInventorySlot(prefSword, true);
@@ -666,20 +644,13 @@ public class InvManager extends Module {
                             }
                         }
 
+                        // Normal Mode Trash Dropping Logic
                         if (this.mode.getValue() == 0 && this.dropTrash.getValue()) {
                             int currentBlockCount = this.getStackSize(inventoryBlocksSlot);
                             int totalThrowsCount = this.getTotalThrowsCount();
                             if (totalThrowsCount > this.throwsAmount.getValue()) {
                                 for (int i = 35; i >= 0; i--) {
-                                    if (!equippedArmorSlots.contains(i) && !inventoryArmorSlots.contains(i)
-                                            && equippedSwordSlot != i && inventorySwordSlot != i
-                                            && equippedPickaxeSlot != i && inventoryPickaxeSlot != i
-                                            && equippedShovelSlot != i && inventoryShovelSlot != i
-                                            && equippedAxeSlot != i && inventoryAxeSlot != i
-                                            && inventoryBlocksSlot != i && equippedThrowsSlot != i
-                                            && inventoryThrowsSlot != i && equippedGappleSlot != i
-                                            && inventoryGappleSlot != i
-                                            && equippedBowSlot != i && inventoryBowSlot != i) {
+                                    if (!equippedArmorSlots.contains(i) && !inventoryArmorSlots.contains(i) && equippedSwordSlot != i && inventorySwordSlot != i && equippedPickaxeSlot != i && inventoryPickaxeSlot != i && equippedShovelSlot != i && inventoryShovelSlot != i && equippedAxeSlot != i && inventoryAxeSlot != i && inventoryBlocksSlot != i && equippedThrowsSlot != i && inventoryThrowsSlot != i && equippedGappleSlot != i && inventoryGappleSlot != i && equippedBowSlot != i && inventoryBowSlot != i) {
                                         ItemStack stack = mc.thePlayer.inventory.getStackInSlot(i);
                                         if (this.isThrowable(stack)) {
                                             this.clickSlot(mc.thePlayer.inventoryContainer.windowId, this.convertSlotIndex(i), 1, 4);
@@ -689,29 +660,24 @@ public class InvManager extends Module {
                                 }
                             }
                             for (int i = 0; i < 36; i++) {
-                                if (!equippedArmorSlots.contains(i) && !inventoryArmorSlots.contains(i)
-                                        && equippedSwordSlot != i && inventorySwordSlot != i
-                                        && equippedPickaxeSlot != i && inventoryPickaxeSlot != i
-                                        && equippedShovelSlot != i && inventoryShovelSlot != i
-                                        && equippedAxeSlot != i && inventoryAxeSlot != i
-                                        && inventoryBlocksSlot != i && equippedThrowsSlot != i
-                                        && inventoryThrowsSlot != i && equippedGappleSlot != i
-                                        && inventoryGappleSlot != i
-                                        && equippedBowSlot != i && inventoryBowSlot != i) {
+                                if (!equippedArmorSlots.contains(i) && !inventoryArmorSlots.contains(i) && equippedSwordSlot != i && inventorySwordSlot != i && equippedPickaxeSlot != i && inventoryPickaxeSlot != i && equippedShovelSlot != i && inventoryShovelSlot != i && equippedAxeSlot != i && inventoryAxeSlot != i && inventoryBlocksSlot != i && equippedThrowsSlot != i && inventoryThrowsSlot != i && equippedGappleSlot != i && inventoryGappleSlot != i && equippedBowSlot != i && inventoryBowSlot != i) {
                                     ItemStack stack = mc.thePlayer.inventory.getStackInSlot(i);
                                     if (stack != null) {
                                         boolean isBlock = ItemUtil.isBlock(stack);
                                         boolean isThrowable = this.isThrowable(stack);
                                         boolean isGapple = this.isGapple(stack);
                                         boolean isOre = this.isOre(stack);
+                                        boolean isPotionItem = this.isPotion(stack); // New check
                                         boolean isProtectedWater = keepWaterBucket.getValue() && isWaterBucket(stack);
                                         boolean isProtectedBowArrow = keepBowAndArrows.getValue() && isBowOrArrow(stack);
 
                                         if (!keepOre.getValue() && isOre) {
                                             this.clickSlot(mc.thePlayer.inventoryContainer.windowId, this.convertSlotIndex(i), 1, 4);
                                             return;
-                                        } else if (!isThrowable && !isOre && !isGapple && !isProtectedWater && !isProtectedBowArrow
-                                                && (ItemUtil.isNotSpecialItem(stack) || (isBlock && currentBlockCount >= this.blocks.getValue()))) {
+                                        } else if (dropPotions.getValue() && isPotionItem) {
+                                            this.clickSlot(mc.thePlayer.inventoryContainer.windowId, this.convertSlotIndex(i), 1, 4);
+                                            return;
+                                        } else if (!isThrowable && !isOre && !isGapple && !isProtectedWater && !isProtectedBowArrow && (ItemUtil.isNotSpecialItem(stack) || (isBlock && currentBlockCount >= this.blocks.getValue()))) {
                                             this.clickSlot(mc.thePlayer.inventoryContainer.windowId, this.convertSlotIndex(i), 1, 4);
                                             return;
                                         }
@@ -720,6 +686,7 @@ public class InvManager extends Module {
                                 }
                             }
                         }
+
                         if (this.autoClose.getValue() && isInventorySorted()) {
                             mc.thePlayer.closeScreen();
                         }
@@ -753,6 +720,7 @@ public class InvManager extends Module {
                 if (this.minDelay.getValue() > this.maxDelay.getValue()) {
                     this.minDelay.setValue(this.maxDelay.getValue());
                 }
+                break;
         }
     }
 }

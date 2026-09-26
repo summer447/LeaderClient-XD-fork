@@ -14,6 +14,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
+@SuppressWarnings("ALL")
 public class MicrosoftOAuthTranslation {
 
     private static final String CLIENT_ID = "9fbc7315-7200-4b2b-a655-bb38c865da17";
@@ -25,12 +26,9 @@ public class MicrosoftOAuthTranslation {
     private static Consumer<String> callback;
 
     static void browse(String url) {
-        try {
-            System.out.println("Opening browser to: " + url);
-            Desktop.getDesktop().browse(new URI(url));
-        } catch (IOException | URISyntaxException e) {
-            System.err.println("Failed to open browser: " + e.getMessage());
-            e.printStackTrace();
+        System.out.println("Opening browser to: " + url);
+        if (!unfair.util.DesktopUtil.openUrl(url)) {
+            System.err.println("Failed to open browser for: " + url);
         }
     }
 

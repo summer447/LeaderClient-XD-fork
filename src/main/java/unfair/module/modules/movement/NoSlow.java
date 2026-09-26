@@ -19,6 +19,7 @@ import unfair.event.types.EventType;
 import unfair.event.types.Priority;
 import unfair.events.*;
 import unfair.module.Module;
+import unfair.module.modules.combat.BlockHit;
 import unfair.module.modules.combat.KillAura;
 import unfair.property.properties.BooleanProperty;
 import unfair.property.properties.IntProperty;
@@ -55,7 +56,7 @@ public class NoSlow extends Module {
     }
 
     public boolean isSwordActive() {
-        return this.swordMode.getValue() != 0 && ItemUtil.isHoldingSword() && (!this.onlyKillAuraAutoBlock.getValue() || this.isKillAuraAutoBlocking());
+        return this.swordMode.getValue() != 0 && ItemUtil.isHoldingSword() && (!this.onlyKillAuraAutoBlock.getValue() || this.isKillAuraAutoBlocking() || this.isBlockHitBlocking());
     }
 
     public boolean isFoodActive() {
@@ -77,6 +78,12 @@ public class NoSlow extends Module {
             return false;
         }
         return aura.isBlocking();
+    }
+
+    /** BlockHit 开启 Allow NoSlow 且正在格挡时，剑的减速移除同样生效 */
+    private boolean isBlockHitBlocking() {
+        BlockHit blockHit = (BlockHit) Unfair.moduleManager.modules.get(BlockHit.class);
+        return blockHit.isEnabled() && blockHit.allowNoSlow.getValue() && blockHit.isBlocking();
     }
     public boolean isAnyActive() {
         if (this.swordMode.getValue() != 2 && this.swordMode.getValue() != 3) {

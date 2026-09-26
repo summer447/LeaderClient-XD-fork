@@ -56,7 +56,6 @@ public class NameTags extends Module {
     public final BooleanProperty armor = new BooleanProperty("Armor", true);
     public final BooleanProperty effects = new BooleanProperty("Effects", true);
     public final BooleanProperty players = new BooleanProperty("Players", true);
-    public final BooleanProperty friends = new BooleanProperty("Friends", true);
     public final BooleanProperty enemies = new BooleanProperty("Enemies", true);
     public final BooleanProperty bossees = new BooleanProperty("Bosses", false);
     public final BooleanProperty mobs = new BooleanProperty("Mobs", false);
@@ -119,8 +118,6 @@ public class NameTags extends Module {
             if (entityLivingBase != mc.thePlayer && entityLivingBase != mc.getRenderViewEntity()) {
                 if (TeamUtil.isBot((EntityPlayer) entityLivingBase)) {
                     return this.bots.getValue();
-                } else if (TeamUtil.isFriend((EntityPlayer) entityLivingBase)) {
-                    return this.friends.getValue();
                 } else {
                     return TeamUtil.isTarget((EntityPlayer) entityLivingBase) ? this.enemies.getValue() : this.players.getValue();
                 }
@@ -260,16 +257,7 @@ public class NameTags extends Module {
                         GlStateManager.popMatrix();
                     }
                 }
-                if (TeamUtil.isFriend(player)) {
-                    RenderUtil.enableRenderState();
-                    float x1 = (float) (-width) / 2.0F - 1.0F;
-                    float y1 = (float) (-fontHeight) - 1.0F;
-                    float x2 = (float) width / 2.0F + 1.0F;
-                    float y2 = this.shadow.getValue() ? 0.0F : -1.0F;
-                    int friendColor = Unfair.friendManager.getColor().getRGB();
-                    RenderUtil.drawOutlineRect(x1, y1, x2, y2, 1.5F, 0, friendColor);
-                    RenderUtil.disableRenderState();
-                } else if (TeamUtil.isTarget(player)) {
+                if (TeamUtil.isTarget(player)) {
                     RenderUtil.enableRenderState();
                     float x1 = (float) (-width) / 2.0F - 1.0F;
                     float y1 = (float) (-fontHeight) - 1.0F;

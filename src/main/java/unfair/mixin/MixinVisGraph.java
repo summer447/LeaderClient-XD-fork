@@ -12,7 +12,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import unfair.Unfair;
 import unfair.module.modules.render.Chams;
 import unfair.module.modules.render.ViewClip;
-import unfair.module.modules.render.Xray;
 
 @SideOnly(Side.CLIENT)
 @Mixin({VisGraph.class})
@@ -25,8 +24,7 @@ public abstract class MixinVisGraph {
     private void func_178606_a(CallbackInfo callbackInfo) {
         if (Unfair.moduleManager != null) {
             if (Unfair.moduleManager.modules.get(Chams.class).isEnabled()
-                    || Unfair.moduleManager.modules.get(ViewClip.class).isEnabled()
-                    || Unfair.moduleManager.modules.get(Xray.class).isEnabled()) {
+                    || Unfair.moduleManager.modules.get(ViewClip.class).isEnabled()) {
                 callbackInfo.cancel();
             }
         }
@@ -40,8 +38,7 @@ public abstract class MixinVisGraph {
     private void computeVisibility(CallbackInfoReturnable<SetVisibility> callbackInfoReturnable) {
         if (Unfair.moduleManager != null) {
             if (Unfair.moduleManager.modules.get(Chams.class).isEnabled()
-                    || Unfair.moduleManager.modules.get(ViewClip.class).isEnabled()
-                    || Unfair.moduleManager.modules.get(Xray.class).isEnabled()) {
+                    || Unfair.moduleManager.modules.get(ViewClip.class).isEnabled()) {
                 SetVisibility setVisibility = new SetVisibility();
                 setVisibility.setAllVisible(true);
                 callbackInfoReturnable.setReturnValue(setVisibility);

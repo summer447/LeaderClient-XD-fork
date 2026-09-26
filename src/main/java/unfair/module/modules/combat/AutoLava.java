@@ -73,7 +73,6 @@ public class AutoLava extends Module {
         if (mc.thePlayer.getDistanceToEntity(entity) > this.range.getValue()) return false;
         if (this.onlyGround.getValue() && !entity.onGround) return false;
         EntityPlayer player = (EntityPlayer) entity;
-        if (TeamUtil.isFriend(player)) return false;
         return !this.teams.getValue() || !TeamUtil.isSameTeam(player);
     }
 

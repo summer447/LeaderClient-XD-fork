@@ -32,17 +32,12 @@ public abstract class MixinNetworkManager {
         if (!packet.getClass().getName().startsWith("net.minecraft.network.play.client")) {
             if (Unfair.delayManager != null && Unfair.delayManager.shouldDelay((Packet<INetHandlerPlayClient>) packet)) {
                 callbackInfo.cancel();
+                return;
             }
-            else if (Disabler.mode.getValue() == 1 && Unfair.moduleManager.getModule(Disabler.class).isEnabled() && Disabler.grimPostDelay(packet)){
-                Disabler.storedPackets.add((Packet<INetHandlerPlayClient>) packet);
+            PacketEvent event = new PacketEvent(EventType.RECEIVE, packet);
+            EventManager.call(event);
+            if (event.isCancelled()) {
                 callbackInfo.cancel();
-            }
-            else {
-                PacketEvent event = new PacketEvent(EventType.RECEIVE, packet);
-                EventManager.call(event);
-                if (event.isCancelled()) {
-                    callbackInfo.cancel();
-                }
             }
         }
     }

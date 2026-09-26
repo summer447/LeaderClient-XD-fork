@@ -1,7 +1,6 @@
 package unfair.mixin;
 
 import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraftforge.fml.relauncher.Side;
@@ -10,11 +9,9 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.Redirect;
-import unfair.Unfair;
 import unfair.event.EventManager;
 import unfair.events.StrafeEvent;
 import unfair.management.RotationState;
-import unfair.module.modules.movement.Jesus;
 
 @SideOnly(Side.CLIENT)
 @Mixin({EntityLivingBase.class})
@@ -22,8 +19,7 @@ public abstract class MixinEntityLivingBase extends MixinEntity {
     @ModifyVariable(
             method = {"jump"},
             at = @At("STORE"),
-            ordinal = 0
-    )
+            name = "f")
     private float jump(float float1) {
         return (Entity) ((Object) this) instanceof EntityPlayerSP && RotationState.isActived()
                 ? RotationState.getSmoothedYaw() * (float) (Math.PI / 180.0)
@@ -56,23 +52,5 @@ public abstract class MixinEntityLivingBase extends MixinEntity {
         } else {
             entityLivingBase.moveFlying(float2, float3, float4);
         }
-    }
-
-    @ModifyVariable(
-            method = {"moveEntityWithHeading"},
-            name = {"f3"},
-            at = @At("STORE")
-    )
-    private float moveEntityWithHeading(float float1) {
-        if ((EntityLivingBase) ((Object) this) instanceof EntityPlayerSP && float1 == (float) EnchantmentHelper.getDepthStriderModifier((EntityLivingBase) ((Object) this))) {
-            if (Unfair.moduleManager == null) {
-                return float1;
-            }
-            Jesus jesus = (Jesus) Unfair.moduleManager.modules.get(Jesus.class);
-            if (jesus.isEnabled() && (!jesus.groundOnly.getValue() || this.onGround)) {
-                return Math.max(float1, jesus.speed.getValue());
-            }
-        }
-        return float1;
     }
 }

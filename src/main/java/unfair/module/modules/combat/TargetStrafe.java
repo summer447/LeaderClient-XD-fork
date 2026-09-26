@@ -24,6 +24,7 @@ import unfair.util.*;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class TargetStrafe extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
@@ -42,7 +43,7 @@ public class TargetStrafe extends Module {
 
     private boolean canStrafe() {
         if (this.speedOnly.getValue()) {
-            Speed speed = (Speed) Unfair.moduleManager.modules.get(Speed.class);
+            Speed speed = (Speed) Objects.requireNonNull(Unfair.moduleManager).modules.get(Speed.class);
             Fly fly = (Fly) Unfair.moduleManager.modules.get(Fly.class);
             LongJump longJump = (LongJump) Unfair.moduleManager.modules.get(LongJump.class);
             if (!speed.isEnabled() && !fly.isEnabled() && (!longJump.isEnabled() || !longJump.isJumping())) {
@@ -53,7 +54,7 @@ public class TargetStrafe extends Module {
     }
 
     private EntityLivingBase getKillAuraTarget() {
-        KillAura killAura = (KillAura) Unfair.moduleManager.modules.get(KillAura.class);
+        KillAura killAura = (KillAura) Objects.requireNonNull(Unfair.moduleManager).modules.get(KillAura.class);
         if (killAura.isEnabled() && killAura.isAttackAllowed()) {
             EntityLivingBase entityLivingBase = killAura.getTarget();
             return !TeamUtil.isEntityLoaded(entityLivingBase) ? null : entityLivingBase;
@@ -64,11 +65,8 @@ public class TargetStrafe extends Module {
 
     private Color getTargetColor(EntityLivingBase entityLivingBase) {
         if (entityLivingBase instanceof EntityPlayer) {
-            if (TeamUtil.isFriend((EntityPlayer) entityLivingBase)) {
-                return Unfair.friendManager.getColor();
-            }
             if (TeamUtil.isTarget((EntityPlayer) entityLivingBase)) {
-                return Unfair.targetManager.getColor();
+                return Objects.requireNonNull(Unfair.targetManager).getColor();
             }
         }
         switch (this.showTarget.getValue()) {
@@ -78,7 +76,7 @@ public class TargetStrafe extends Module {
                 }
                 return TeamUtil.getTeamColor((EntityPlayer) entityLivingBase, 1.0F);
             case 2:
-                int color = ((HUD) Unfair.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis()).getRGB();
+                int color = ((HUD) Objects.requireNonNull(Unfair.moduleManager).modules.get(HUD.class)).getColor(System.currentTimeMillis()).getRGB();
                 return new Color(color);
             default:
                 return new Color(-1);

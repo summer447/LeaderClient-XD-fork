@@ -34,6 +34,7 @@ public class DD {
         if (props != null) {
             for (Property<?> v : props) {
                 if (v instanceof BooleanProperty) list.add(new BoolSetting((BooleanProperty) v));
+                else if (v instanceof RangeProperty) list.add(new RangeSliderSetting((RangeProperty) v));
                 else if (v instanceof FloatProperty || v instanceof IntProperty || v instanceof PercentProperty) list.add(new SliderSetting(v));
                 else if (v instanceof ModeProperty) list.add(new ModeSetting((ModeProperty) v));
                 else if (v instanceof ColorProperty) list.add(new ColorSetting((ColorProperty) v));

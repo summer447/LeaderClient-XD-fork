@@ -2,25 +2,26 @@ package unfair.module.modules.misc;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiDownloadTerrain;
-import net.minecraft.client.network.NetHandlerPlayClient;
+import net.minecraft.client.gui.inventory.GuiChest;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.INetHandlerPlayClient;
-import net.minecraft.network.play.client.C0DPacketCloseWindow;
-import net.minecraft.network.play.client.C0EPacketClickWindow;
-import net.minecraft.network.play.client.C16PacketClientStatus;
+import net.minecraft.network.play.client.*;
 import net.minecraft.network.play.server.*;
 import unfair.Unfair;
 import unfair.event.EventTarget;
 import unfair.event.types.EventType;
 import unfair.events.PacketEvent;
 import unfair.events.PreMotionEvent;
+import unfair.events.TickEvent;
 import unfair.module.Module;
 import unfair.property.properties.ModeProperty;
 import unfair.util.ChatUtil;
 import unfair.util.PacketUtil;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -28,12 +29,14 @@ import static unfair.event.EventManager.call;
 
 public class Disabler extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
-    public static final ModeProperty mode = new ModeProperty("Mode", 0, new String[]{"Prediction Inventory","Post"});
-
+    public static final ModeProperty mode = new ModeProperty("Mode", 0, new String[]{"PredictionInventory"});
     private final List<Packet<?>> inventoryPackets = new ArrayList<>();
-    public static final CopyOnWriteArrayList<Packet<INetHandlerPlayClient>> storedPackets = new CopyOnWriteArrayList<Packet<INetHandlerPlayClient>>();
+    private int forwardKeyReleaseTicks = 0;
+
+    public static final CopyOnWriteArrayList<Packet<INetHandlerPlayClient>> storedPackets = new CopyOnWriteArrayList<>();
+
     public Disabler() {
-        super("Disabler",false,false);
+        super("Disabler", false, false);
     }
 
     @Override
@@ -45,28 +48,28 @@ public class Disabler extends Module {
         }
         resetStates();
     }
-    public boolean checkCompass(){
-        boolean compass = false;
+    public boolean checkCompass() {
+        if (mc.thePlayer == null) return false;
         for (int i = 0; i < 9; i++) {
             final ItemStack stackInSlot = mc.thePlayer.inventory.getStackInSlot(i);
             if (stackInSlot != null && stackInSlot.getUnlocalizedName().toLowerCase().contains("compass")) {
-                compass = true;
+                return true;
             }
         }
-        return compass;
+        return false;
     }
 
     @Override
     public void onDisabled() {
-        if (mode.getValue() == 0) {
-            if (!inventoryPackets.isEmpty()) {
-                for (Packet<?> p : inventoryPackets) {
-                    PacketUtil.sendPacketNoEvent(p);
-                }
-                inventoryPackets.clear();
+        if (!inventoryPackets.isEmpty()) {
+            for (Packet<?> p : inventoryPackets) {
+                PacketUtil.sendPacketNoEvent(p);
             }
-            resetStates();
+            inventoryPackets.clear();
         }
+        storedPackets.clear();
+        forwardKeyReleaseTicks = 0;
+        resetStates();
     }
 
     private void resetStates() {
@@ -74,9 +77,17 @@ public class Disabler extends Module {
     }
 
     @EventTarget
+    public void onTick(TickEvent event) {
+        if (forwardKeyReleaseTicks > 0) {
+            KeyBinding.setKeyBindState(mc.gameSettings.keyBindForward.getKeyCode(), false);
+            forwardKeyReleaseTicks--;
+        }
+    }
+    @EventTarget
     public void onPacket(PacketEvent event) {
+        if (!this.isEnabled()) return;
+
         if (mode.getValue() == 0) {
-            if (!this.isEnabled()) return;
             if (!this.checkCompass()) {
                 if (event.getType() == EventType.SEND) {
                     handlePredictionInventory(event);
@@ -88,57 +99,55 @@ public class Disabler extends Module {
     public void onPre(PreMotionEvent event){
         if (this.isEnabled())releasePost();
     }
-    public static boolean grimPostDelay(final Packet<?> packet) {
-        if (mc.thePlayer == null) {
-            return false;
-        }
-        if (mc.currentScreen instanceof GuiDownloadTerrain) {
-            return false;
-        }
-        if (packet instanceof S12PacketEntityVelocity) {
-            S12PacketEntityVelocity s12PacketEntityVelocity = (S12PacketEntityVelocity) packet;
-            return s12PacketEntityVelocity.getEntityID() == mc.thePlayer.getEntityId();
-        }
-        return packet instanceof S27PacketExplosion || packet instanceof S32PacketConfirmTransaction || packet instanceof S08PacketPlayerPosLook || packet instanceof S18PacketEntityTeleport || packet instanceof S19PacketEntityStatus || packet instanceof S04PacketEntityEquipment || packet instanceof S23PacketBlockChange || packet instanceof S22PacketMultiBlockChange || packet instanceof S13PacketDestroyEntities || packet instanceof S00PacketKeepAlive || packet instanceof S06PacketUpdateHealth || packet instanceof S14PacketEntity || packet instanceof S0FPacketSpawnMob|| packet instanceof S3FPacketCustomPayload;
-    }
     private void handlePredictionInventory(PacketEvent event) {
         if (!mode.getModeString().equals("PredictionInventory")) return;
 
         Packet<?> packet = event.getPacket();
-        if (packet instanceof C16PacketClientStatus || packet instanceof C0EPacketClickWindow) {
+
+        if (mc.currentScreen instanceof GuiChest) return;
+
+        if (packet instanceof C16PacketClientStatus) {
             event.setCancelled(true);
             inventoryPackets.add(packet);
-        } else if (packet instanceof C0DPacketCloseWindow) {
+        }
+
+        else if (packet instanceof C0EPacketClickWindow) {
+            event.setCancelled(true);
+            inventoryPackets.add(packet);
+        }
+        else if (packet instanceof C0DPacketCloseWindow) {
+            event.setCancelled(true);
+            if (mc.thePlayer.isSprinting()) {
+                PacketUtil.sendPacketNoEvent(new C0BPacketEntityAction(mc.thePlayer, C0BPacketEntityAction.Action.STOP_SPRINTING));
+                forwardKeyReleaseTicks = 20;
+                KeyBinding.setKeyBindState(mc.gameSettings.keyBindForward.getKeyCode(), false);
+            }
             for (Packet<?> p : inventoryPackets) {
-                PacketUtil.sendPacketNoEvent(p);
+                if (!(p instanceof C16PacketClientStatus)) {
+                    PacketUtil.sendPacketNoEvent(p);
+                }
             }
             inventoryPackets.clear();
+            PacketUtil.sendPacketNoEvent(packet);
         }
     }
     public static void releasePost() {
-        if (Unfair.moduleManager.getModule(Disabler.class).isEnabled() && mode.getValue() == 1 && mc.getNetHandler() != null) {
-            while (!storedPackets.isEmpty()) {
-                PacketEvent packetEvent = new PacketEvent(EventType.RECEIVE, (Packet<?>) storedPackets);
-                call(packetEvent);
+        if (!Unfair.moduleManager.getModule(Disabler.class).isEnabled() || mode.getValue() == 0) return;
+        if (mc.getNetHandler() == null || storedPackets.isEmpty()) return;
 
-                if (packetEvent.isCancelled()) {
-                    continue;
-                }
+        Iterator<Packet<INetHandlerPlayClient>> iterator = storedPackets.iterator();
+        while (iterator.hasNext()) {
+            Packet<INetHandlerPlayClient> packet = iterator.next();
+            PacketEvent packetEvent = new PacketEvent(EventType.RECEIVE, packet);
+            call(packetEvent);
 
-                Packet<NetHandlerPlayClient> packet = packetEvent.getPacket() instanceof Packet ?
-                        (Packet<NetHandlerPlayClient>) packetEvent.getPacket() : null;
-
-                if (packet == null) {
-                    continue;
-                }
-
-                try {
-                    packet.processPacket(mc.getNetHandler());
-                } catch (Exception e) {
-                    // 记录异常或调试信息
-                    e.printStackTrace();
-                }
+            if (packetEvent.isCancelled()) {
+                continue;
             }
+            try {
+                packet.processPacket(mc.getNetHandler());
+            } catch (Exception ignored) {}
         }
+        storedPackets.clear();
     }
 }

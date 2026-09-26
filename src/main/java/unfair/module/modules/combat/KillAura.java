@@ -30,7 +30,6 @@ import net.minecraft.util.*;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.WorldSettings.GameType;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.vector.Vector2f;
 import unfair.Unfair;
 import unfair.enums.BlinkModules;
 import unfair.event.EventManager;
@@ -258,7 +257,7 @@ public class KillAura extends Module {
                     AutoBlockIn autoBlockIn = (AutoBlockIn) Unfair.moduleManager.modules.get(AutoBlockIn.class);
                     if (bedNuker.isEnabled() && bedNuker.isReady()) {
                         return false;
-                    } else if (Unfair.moduleManager.modules.get(Scaffold.class).isEnabled()) {
+                    } else if (Unfair.moduleManager.modules.get(Scaffold.class).isEnabled() && Scaffold.mode.getValue() != 3) {
                         return false;
                     } else if (autoBlockIn.isEnabled()) {
                         return false;
@@ -307,8 +306,6 @@ public class KillAura extends Module {
                 return false;
             } else if (entityLivingBase instanceof EntityOtherPlayerMP) {
                 if (!this.players.getValue()) {
-                    return false;
-                } else if (TeamUtil.isFriend((EntityPlayer) entityLivingBase)) {
                     return false;
                 } else {
                     return (!this.teams.getValue() || !TeamUtil.isSameTeam((EntityPlayer) entityLivingBase)) && (!this.botCheck.getValue() || !TeamUtil.isBot((EntityPlayer) entityLivingBase));

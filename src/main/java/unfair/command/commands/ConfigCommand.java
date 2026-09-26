@@ -14,6 +14,7 @@ import unfair.command.Command;
 import unfair.config.Config;
 import unfair.enums.ChatColors;
 import unfair.util.ChatUtil;
+import unfair.util.DesktopUtil;
 
 import java.awt.*;
 import java.io.File;
@@ -92,9 +93,7 @@ public class ConfigCommand extends Command {
                 case "folder":
                 case "dir":
                 case "directory":
-                    try {
-                        Desktop.getDesktop().open(new File("./config/Unfair/"));
-                    } catch (Exception e) {
+                    if (!DesktopUtil.openFile(new File("./config/Unfair/"))) {
                         ChatUtil.sendFormatted(String.format("%sFailed to open (&o%s&r)&r", Unfair.clientName, "./config/Unfair/"));
                     }
                     return;

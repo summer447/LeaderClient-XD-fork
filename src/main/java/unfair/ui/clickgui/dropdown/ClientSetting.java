@@ -38,6 +38,10 @@ public class ClientSetting extends ValueItem {
         }
         Unfair.fontManager.getFont(fontSize).drawString(hiddenLabel, x + 4, y, hiddenColor, false);
 
+        if (!module.isBindable()) {
+            return;
+        }
+
         String keyName = listening ? "..." : KeyBindUtil.getKeyName(module.getKey());
         String display = "[" + keyName + "]";
         float bindW = Unfair.fontManager.getFont(fontSize).getStringWidth(display);
@@ -62,6 +66,15 @@ public class ClientSetting extends ValueItem {
 
     @Override
     public void mouseClicked(int mx, int my, int button) {
+        if (!module.isBindable()) {
+            String hiddenLabel = module.isHidden() ? "Hidden" : "Hide";
+            float hideW = Unfair.fontManager.getFont(17).getStringWidth(hiddenLabel);
+            if (button == 0 && isHovering(mx, my, x + 2, y, hideW + 4, getHeight())) {
+                module.setHidden(!module.isHidden());
+            }
+            return;
+        }
+
         int fontSize = 17;
         String hiddenLabel = module.isHidden() ? "Hidden" : "Hide";
         float hideW = Unfair.fontManager.getFont(fontSize).getStringWidth(hiddenLabel);

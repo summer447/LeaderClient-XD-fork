@@ -1,16 +1,18 @@
 package unfair.management.altmanager;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.gui.ScaledResolution;
 import org.lwjgl.input.Keyboard;
-import unfair.Unfair;
 import unfair.management.altmanager.microsoft.MicrosoftOAuthTranslation;
-import unfair.module.modules.render.HUD;
-import unfair.util.RenderUtil;
+import unfair.ui.LeaderButton;
+import unfair.ui.MaterialYou;
+import unfair.util.shader.RoundedUtils;
 
-import java.awt.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,17 +22,13 @@ public class AltManagerGui extends GuiScreen {
     private static final List<Alt> alts = new ArrayList<>();
     public static String status = "§aIdle";
     private static File altFile;
-    // Buttons
-    private final List<Button> buttons = new ArrayList<>();
     private int selectedAlt = -1;
     private int scrollOffset = 0;
     private final int maxVisibleAlts = 8;
     // UI dimensions
     private int guiX, guiY, guiWidth, guiHeight;
     private int listX, listY, listWidth, listHeight;
-    // Input field (single input for username/cracked)
-    private String usernameInput = "";
-    private boolean inputFocused = false;
+    private GuiTextField usernameField;
 
     public AltManagerGui() {
         loadAlts();
@@ -98,160 +96,161 @@ public class AltManagerGui extends GuiScreen {
         listWidth = 150;
         listHeight = 160;
 
-        buttons.clear();
+        this.buttonList.clear();
         int btnX = guiX + 170;
         int btnY = guiY + 30;
         int btnW = 140;
-        int btnH = 18;
-        int spacing = 22;
+        int btnH = 20;
+        int spacing = 26;
 
-        buttons.add(new Button("Login", btnX, btnY, btnW, btnH, () -> loginSelected()));
-        buttons.add(new Button("Add Cracked", btnX, btnY + spacing, btnW, btnH, () -> addCracked()));
-        buttons.add(new Button("Token Login", btnX, btnY + spacing * 2, btnW, btnH, () -> mc.displayGuiScreen(new TokenLoginGui(this))));
-        buttons.add(new Button("Remove", btnX, btnY + spacing * 3, btnW, btnH, () -> removeSelected()));
-        buttons.add(new Button("OAuth Login", btnX, btnY + spacing * 4, btnW, btnH, () -> startOAuth()));
-        buttons.add(new Button("Back", guiX + guiWidth / 2 - 30, guiY + guiHeight - 25, 60, 18, () -> mc.displayGuiScreen(new GuiMainMenu())));
+        this.buttonList.add(new LeaderButton(0, btnX, btnY, btnW, btnH, "Login"));
+        this.buttonList.add(new LeaderButton(1, btnX, btnY + spacing, btnW, btnH, "Add Cracked"));
+        this.buttonList.add(new LeaderButton(2, btnX, btnY + spacing * 2, btnW, btnH, "Token Login"));
+        this.buttonList.add(new LeaderButton(3, btnX, btnY + spacing * 3, btnW, btnH, "Remove"));
+        this.buttonList.add(new LeaderButton(4, btnX, btnY + spacing * 4, btnW, btnH, "OAuth Login"));
+        this.buttonList.add(new LeaderButton(5, guiX + guiWidth / 2 - 30, guiY + guiHeight - 28, 60, btnH, "Back"));
+
+        int inputX = guiX + 170;
+        int inputY = guiY + 178;
+        int inputW = 140;
+        int inputH = 20;
+        this.usernameField = new GuiTextField(0, this.fontRendererObj, inputX, inputY, inputW, inputH);
+        this.usernameField.setMaxStringLength(64);
+    }
+
+    @Override
+    public void drawDefaultBackground() {
+        // 空实现，避免 MixinGuiScreen.drawBackground 重复绘制背景
     }
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        // Background
-        drawDefaultBackground();
+        try {
+            MaterialYou.Scheme scheme = MaterialYou.getScheme();
 
-        // Main panel
-        RenderUtil.drawRoundedRectangle(guiX, guiY, guiX + guiWidth, guiY + guiHeight, 8, new Color(30, 30, 30, 200).getRGB());
+            // Background
+            Gui.drawRect(0, 0, this.width, this.height, scheme.getSurfaceContainer());
 
-        HUD hud = (HUD) Unfair.moduleManager.modules.get(HUD.class);
-        int hudColor = hud.getColor(System.currentTimeMillis()).getRGB();
+            // Main panel
+            RoundedUtils.drawRound(guiX, guiY, guiWidth, guiHeight, 12, scheme.getSurfaceContainerHigh());
 
-        // Title
-        mc.fontRendererObj.drawStringWithShadow("Alt Manager", guiX + 10, guiY + 10, hudColor);
+            // Title
+            mc.fontRendererObj.drawString("Alt Manager", guiX + 16, guiY + 14, scheme.getPrimary());
 
-        // Status
-        mc.fontRendererObj.drawStringWithShadow("Status: " + status, guiX + 120, guiY + 10, -1);
+            // Status
+            mc.fontRendererObj.drawString("Status: " + status, guiX + 120, guiY + 14, scheme.getOnSurface());
 
-        // Alt list background
-        RenderUtil.drawRoundedRectangle(listX, listY, listX + listWidth, listY + listHeight, 4, new Color(20, 20, 20, 180).getRGB());
+            // Alt list background
+            RoundedUtils.drawRound(listX, listY, listWidth, listHeight, 8, scheme.getSurfaceContainerHighest());
 
-        // Alt list
-        int itemHeight = 18;
-        int visibleStart = Math.max(0, Math.min(scrollOffset, alts.size() - maxVisibleAlts));
-        int visibleEnd = Math.min(visibleStart + maxVisibleAlts, alts.size());
+            // Alt list
+            int itemHeight = 20;
+            int visibleStart = Math.max(0, Math.min(scrollOffset, alts.size() - maxVisibleAlts));
+            int visibleEnd = Math.min(visibleStart + maxVisibleAlts, alts.size());
 
-        for (int i = visibleStart; i < visibleEnd; i++) {
-            Alt alt = alts.get(i);
-            int itemY = listY + 2 + (i - visibleStart) * itemHeight;
-            boolean isSelected = i == selectedAlt;
-            boolean isHovered = mouseX >= listX && mouseX <= listX + listWidth && mouseY >= itemY && mouseY < itemY + itemHeight;
+            for (int i = visibleStart; i < visibleEnd; i++) {
+                Alt alt = alts.get(i);
+                int itemY = listY + 4 + (i - visibleStart) * itemHeight;
+                boolean isSelected = i == selectedAlt;
+                boolean isHovered = mouseX >= listX && mouseX <= listX + listWidth && mouseY >= itemY && mouseY < itemY + itemHeight;
 
-            int bgColor = isSelected ? hudColor : (isHovered ? new Color(60, 60, 60, 180).getRGB() : new Color(40, 40, 40, 150).getRGB());
-            RenderUtil.drawRoundedRectangle(listX + 2, itemY, listX + listWidth - 2, itemY + itemHeight - 2, 2, bgColor);
+                int bgColor;
+                int textColor;
+                if (isSelected) {
+                    bgColor = scheme.getPrimaryContainer();
+                    textColor = scheme.getOnPrimaryContainer();
+                } else if (isHovered) {
+                    bgColor = MaterialYou.applyStateLayer(scheme.getSurfaceContainerHighest(), scheme.getOnSurface(), MaterialYou.STATE_HOVER);
+                    textColor = scheme.getOnSurface();
+                } else {
+                    bgColor = 0;
+                    textColor = scheme.getOnSurfaceVariant();
+                }
 
-            String typeStr = alt.isCracked() ? "Cracked" : "Microsoft";
-            String displayName = alt.getName() != null && !alt.getName().isEmpty() ? alt.getName() : alt.getEmail();
-            if (displayName == null || displayName.isEmpty()) displayName = "Unknown";
+                if (bgColor != 0) {
+                    RoundedUtils.drawRound(listX + 4, itemY, listWidth - 8, itemHeight - 4, 6, bgColor);
+                }
 
-            String listText = typeStr + ": " + displayName;
-            if (alt.isBanned()) listText = "§c[Banned] §r" + listText;
-            else if (alt.isCracked()) listText = "§e" + listText;
-            else listText = "§b" + listText;
+                String typeStr = alt.isCracked() ? "Cracked" : "Microsoft";
+                String displayName = alt.getName() != null && !alt.getName().isEmpty() ? alt.getName() : alt.getEmail();
+                if (displayName == null || displayName.isEmpty()) displayName = "Unknown";
 
-            mc.fontRendererObj.drawString(listText, listX + 6, itemY + 4, -1);
-        }
+                String listText = typeStr + ": " + displayName;
+                if (alt.isBanned()) listText = "§c[Banned] §r" + listText;
 
-        // Single input field for username
-        int inputX = guiX + 170;
-        int inputY = guiY + 180;
-        int inputW = 140;
-        int inputH = 14;
+                mc.fontRendererObj.drawString(listText, listX + 10, itemY + 6, textColor);
+            }
 
-        int inputBorder = inputFocused ? hudColor : new Color(80, 80, 80).getRGB();
-        RenderUtil.drawRoundedRectangle(inputX - 1, inputY - 1, inputX + inputW + 1, inputY + inputH + 1, 2, inputBorder);
-        RenderUtil.drawRoundedRectangle(inputX, inputY, inputX + inputW, inputY + inputH, 2, new Color(20, 20, 20).getRGB());
-        mc.fontRendererObj.drawString("Username/Token:", inputX, inputY - 10, new Color(200, 200, 200).getRGB());
+            // Username label
+            mc.fontRendererObj.drawString("Username/Token:", guiX + 170, guiY + 168, scheme.getOnSurfaceVariant());
 
-        String inputDisplay = usernameInput.isEmpty() ? (inputFocused ? "_" : "") : usernameInput;
-        if (inputFocused && !usernameInput.isEmpty() && (System.currentTimeMillis() / 500) % 2 == 0) {
-            inputDisplay += "_";
-        }
-        mc.fontRendererObj.drawString(inputDisplay, inputX + 4, inputY + 3, usernameInput.isEmpty() ? new Color(100, 100, 100).getRGB() : -1);
+            // Text field (themed by MixinGuiTextField)
+            if (this.usernameField != null) {
+                this.usernameField.drawTextBox();
+            }
 
-        // Buttons
-        for (Button btn : buttons) {
-            boolean hovered = mouseX >= btn.x && mouseX <= btn.x + btn.w && mouseY >= btn.y && mouseY <= btn.y + btn.h;
-            int btnColor = hovered ? new Color(hudColor).brighter().getRGB() : hudColor;
-            RenderUtil.drawRoundedRectangle(btn.x, btn.y, btn.x + btn.w, btn.y + btn.h, 4, btnColor);
-            int textWidth = mc.fontRendererObj.getStringWidth(btn.text);
-            mc.fontRendererObj.drawStringWithShadow(btn.text, btn.x + (btn.w - textWidth) / 2, btn.y + 5, -1);
-        }
+            // Buttons (themed by MaterialButtonRenderer via LeaderButton.drawButton)
+            for (GuiButton button : this.buttonList) {
+                button.drawButton(this.mc, mouseX, mouseY);
+            }
 
-        // Scroll info
-        if (alts.size() > maxVisibleAlts) {
-            mc.fontRendererObj.drawString("(" + alts.size() + " alts, scroll)", listX, listY + listHeight + 2, new Color(150, 150, 150).getRGB());
+            // Scroll info
+            if (alts.size() > maxVisibleAlts) {
+                mc.fontRendererObj.drawString("(" + alts.size() + " alts, scroll)", listX, listY + listHeight + 4, scheme.getOnSurfaceVariant());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
         // Check alt list clicks
-        int itemHeight = 18;
+        int itemHeight = 20;
         for (int i = 0; i < alts.size(); i++) {
-            int itemY = listY + 2 + i * itemHeight - scrollOffset * itemHeight;
+            int itemY = listY + 4 + i * itemHeight - scrollOffset * itemHeight;
             if (itemY >= listY && itemY < listY + listHeight && mouseX >= listX && mouseX <= listX + listWidth && mouseY >= itemY && mouseY < itemY + itemHeight) {
                 selectedAlt = i;
-                if (mouseButton == 0 && i < alts.size()) {
+                if (mouseButton == 0 && i < alts.size() && this.usernameField != null) {
                     Alt alt = alts.get(i);
-                    usernameInput = alt.getName() != null ? alt.getName() : alt.getEmail();
+                    this.usernameField.setText(alt.getName() != null ? alt.getName() : alt.getEmail());
                 }
                 return;
             }
         }
 
-        // Input field click
-        int inputX = guiX + 170;
-        int inputY = guiY + 180;
-        int inputW = 140;
-        int inputH = 14;
-
-        if (mouseX >= inputX && mouseX <= inputX + inputW && mouseY >= inputY && mouseY <= inputY + inputH) {
-            inputFocused = true;
-            return;
+        // Text field
+        if (this.usernameField != null) {
+            this.usernameField.mouseClicked(mouseX, mouseY, mouseButton);
         }
 
-        inputFocused = false;
+        // Buttons (vanilla handles via buttonList -> actionPerformed)
+        super.mouseClicked(mouseX, mouseY, mouseButton);
+    }
 
-        // Button clicks
-        for (Button btn : buttons) {
-            if (mouseX >= btn.x && mouseX <= btn.x + btn.w && mouseY >= btn.y && mouseY <= btn.y + btn.h) {
-                btn.action.run();
-                return;
-            }
+    @Override
+    protected void actionPerformed(GuiButton button) throws IOException {
+        switch (button.id) {
+            case 0: loginSelected(); break;
+            case 1: addCracked(); break;
+            case 2: mc.displayGuiScreen(new TokenLoginGui(this)); break;
+            case 3: removeSelected(); break;
+            case 4: startOAuth(); break;
+            case 5: mc.displayGuiScreen(new GuiMainMenu()); break;
         }
     }
 
     @Override
-    protected void keyTyped(char typedChar, int keyCode) {
+    protected void keyTyped(char typedChar, int keyCode) throws IOException {
         if (keyCode == Keyboard.KEY_ESCAPE) {
             mc.displayGuiScreen(new GuiMainMenu());
             return;
         }
 
-        if (keyCode == Keyboard.KEY_TAB) {
-            inputFocused = !inputFocused;
-            return;
+        if (this.usernameField != null) {
+            this.usernameField.textboxKeyTyped(typedChar, keyCode);
         }
-
-        if (inputFocused) {
-            if (keyCode == Keyboard.KEY_BACK) {
-                if (!usernameInput.isEmpty()) usernameInput = usernameInput.substring(0, usernameInput.length() - 1);
-            } else if (isValidChar(typedChar) && usernameInput.length() < 64) {
-                usernameInput += typedChar;
-            }
-        }
-    }
-
-    private boolean isValidChar(char c) {
-        return c >= 32 && c < 127;
+        super.keyTyped(typedChar, keyCode);
     }
 
     @Override
@@ -287,14 +286,15 @@ public class AltManagerGui extends GuiScreen {
     }
 
     private void addCracked() {
-        if (usernameInput.isEmpty()) {
+        String username = this.usernameField.getText().trim();
+        if (username.isEmpty()) {
             status = "§cEnter a username";
             return;
         }
-        Alt alt = new Alt(usernameInput, "", usernameInput, true);
+        Alt alt = new Alt(username, "", username, true);
         alts.add(alt);
         saveAlts();
-        usernameInput = "";
+        this.usernameField.setText("");
         status = "§aAdded cracked alt";
     }
 
@@ -344,20 +344,5 @@ public class AltManagerGui extends GuiScreen {
     @Override
     public boolean doesGuiPauseGame() {
         return false;
-    }
-
-    private static class Button {
-        String text;
-        int x, y, w, h;
-        Runnable action;
-
-        Button(String text, int x, int y, int w, int h, Runnable action) {
-            this.text = text;
-            this.x = x;
-            this.y = y;
-            this.w = w;
-            this.h = h;
-            this.action = action;
-        }
     }
 }

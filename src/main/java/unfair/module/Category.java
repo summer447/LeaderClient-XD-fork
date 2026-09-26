@@ -8,6 +8,7 @@ public enum Category {
     MISC("Misc", "unfair.module.modules.misc"),
     CONFIG("Config", null),
     SETTINGS("Settings", null);
+
     private final String displayName;
     private final String packageName;
 

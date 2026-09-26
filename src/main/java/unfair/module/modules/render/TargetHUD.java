@@ -149,9 +149,6 @@ public class TargetHUD extends Module {
             return new Color(-1);
         }
         if (entityLivingBase instanceof EntityPlayer) {
-            if (TeamUtil.isFriend((EntityPlayer) entityLivingBase)) {
-                return Unfair.friendManager.getColor();
-            }
             if (TeamUtil.isTarget((EntityPlayer) entityLivingBase)) {
                 return Unfair.targetManager.getColor();
             }

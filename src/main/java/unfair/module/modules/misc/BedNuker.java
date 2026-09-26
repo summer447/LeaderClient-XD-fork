@@ -39,6 +39,7 @@ import unfair.management.RotationState;
 import unfair.mixin.IAccessorPlayerControllerMP;
 import unfair.module.Module;
 import unfair.module.modules.player.AutoBlockIn;
+import unfair.module.modules.render.ArrayList;
 import unfair.module.modules.render.BedESP;
 import unfair.module.modules.render.HUD;
 import unfair.property.properties.BooleanProperty;
@@ -48,7 +49,6 @@ import unfair.property.properties.PercentProperty;
 import unfair.util.*;
 
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.concurrent.Executors;
@@ -71,7 +71,7 @@ public class BedNuker extends Module {
     public final ModeProperty showProgress = new ModeProperty("Show Progress", 1, new String[]{"None", "Default", "Hud"});
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private final TimerUtil timer = new TimerUtil();
-    private final ArrayList<BlockPos> bedWhitelist = new ArrayList<BlockPos>();
+    private final java.util.ArrayList<BlockPos> bedWhitelist = new java.util.ArrayList<BlockPos>();
     private final Color colorRed = new Color(ChatColors.RED.toAwtColor());
     private final Color colorYellow = new Color(ChatColors.YELLOW.toAwtColor());
     private final Color colorGreen = new Color(ChatColors.GREEN.toAwtColor());
@@ -219,7 +219,7 @@ public class BedNuker extends Module {
     private BlockPos validateBedPlacement(BlockPos bedPosition) {
         IBlockState blockState = mc.theWorld.getBlockState(bedPosition);
         if (blockState.getBlock() instanceof BlockBed) {
-            ArrayList<BlockPos> pos = new ArrayList<>();
+            java.util.ArrayList<BlockPos> pos = new java.util.ArrayList<>();
             EnumPartType partType = blockState.getValue(BlockBed.PART);
             EnumFacing facing = blockState.getValue(BlockBed.FACING);
             for (BlockPos blockPos : Arrays.asList(bedPosition, bedPosition.offset(partType == EnumPartType.HEAD ? facing.getOpposite() : facing))) {
@@ -256,7 +256,7 @@ public class BedNuker extends Module {
     }
 
     private BlockPos findTargetBed(double x, double y, double z) {
-        ArrayList<BlockPos> targets = new ArrayList<>();
+        java.util.ArrayList<BlockPos> targets = new java.util.ArrayList<>();
         int sX = MathHelper.floor_double(x);
         int sY = MathHelper.floor_double(y);
         int sZ = MathHelper.floor_double(z);
@@ -494,6 +494,7 @@ public class BedNuker extends Module {
                 if (this.showProgress.getValue() != 0) {
                     HUD hud = (HUD) Unfair.moduleManager.modules.get(HUD.class);
                     float scale = hud.scale.getValue();
+                    boolean shadow = ((ArrayList) Unfair.moduleManager.modules.get(ArrayList.class)).shadow.getValue();
                     String text = String.format("%d%%", (int) (this.calcProgress() * 100.0F));
                     GlStateManager.pushMatrix();
                     GlStateManager.scale(scale, scale, 0.0F);
@@ -507,7 +508,7 @@ public class BedNuker extends Module {
                                     (float) new ScaledResolution(mc).getScaledWidth() / 2.0F / scale - (float) width / 2.0F,
                                     (float) new ScaledResolution(mc).getScaledHeight() / 5.0F * 2.0F / scale,
                                     this.getProgressColor(this.showProgress.getValue()).getRGB() & 16777215 | -1090519040,
-                                    hud.shadow.getValue()
+                                    shadow
                             );
                     GlStateManager.disableBlend();
                     GlStateManager.enableDepth();

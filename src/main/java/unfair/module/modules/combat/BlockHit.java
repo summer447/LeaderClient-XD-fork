@@ -25,6 +25,10 @@ public class BlockHit extends Module {
         super("BlockHit",false, false);
     }
     private final ModeProperty mode = new ModeProperty("Mode",0,new String[]{"Helper","Auto","Lag"});
+    // 绕过：格挡时允许 NoSlow 生效
+    public final BooleanProperty allowNoSlow = new BooleanProperty("Allow NoSlow", true);
+    // 绕过：强制第一人称格挡视觉（即使服务端状态未同步）
+    public final BooleanProperty visualBlocking = new BooleanProperty("Visual Blocking", true);
 
     private final IntProperty stopTime = new IntProperty("Stop Ticks",2,1,5, () -> this.mode.getValue() == 0);
     private final ModeProperty autoMode = new ModeProperty("Auto Mode",0,new String[]{"Spam","Hold"},() -> this.mode.getValue() == 1 && this.autoBlockTime.getValue() == 0);
@@ -53,6 +57,24 @@ public class BlockHit extends Module {
     private int getBlockTicks = 0;
     private EntityLivingBase target;
     private TimerUtil timer = new TimerUtil();
+
+    // 模块正在驱动格挡（按下 use 键）期间为 true
+    private boolean blocking;
+
+    /** 供 NoSlow / 渲染层查询：模块是否正在格挡 */
+    public boolean isBlocking() {
+        return this.isEnabled() && this.blocking && ItemUtil.isHoldingSword();
+    }
+
+    /** 绕过：按 Ping 延长格挡保持 tick，保证服务器先收到格挡再松开，最多补偿 2 tick */
+    private int getLatencyTicks() {
+        try {
+            int ping = mc.getNetHandler().getPlayerInfo(mc.thePlayer.getUniqueID()).getResponseTime();
+            return ping <= 0 ? 0 : Math.max(0, Math.min(2, (int) Math.ceil(ping / 50.0)));
+        } catch (Exception ignored) {
+            return 0;
+        }
+    }
     @EventTarget
     public void onTick(TickEvent event) {
         if (!this.isEnabled() || mc.thePlayer == null || mc.theWorld == null) return;
@@ -100,6 +122,7 @@ public class BlockHit extends Module {
                     if (autoBlockTime.getValue() == 0) {
                         if (timer.hasTimeElapsed(blockDelay.getValue().longValue())) {
                             if (this.autoMode.getValue() == 0) {
+                                this.blocking = true;
                                 KeyBindUtil.pressKeyOnce(mc.gameSettings.keyBindUseItem.getKeyCode());
                                 timer.reset();
                                 reset();
@@ -108,34 +131,40 @@ public class BlockHit extends Module {
                                 startBlocking = true;
                             }
                             if (startBlocking) {
+                                this.blocking = true;
                                 KeyBindUtil.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), true);
                                 holdTicks++;
                             }
-                            if (holdTicks > holdTick.getValue()) {
+                            if (holdTicks > holdTick.getValue() + this.getLatencyTicks()) {
                                 KeyBindUtil.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), false);
                                 startBlocking = false;
                                 holdTicks = 0;
+                                this.blocking = false;
                                 timer.reset();
                             }
                         }
                     }
                     if (autoBlockTime.getValue() == 1) {
                         if (mc.thePlayer.hurtTime >= minHurtTime.getValue() && mc.thePlayer.hurtTime <= maxHurtTime.getValue()) {
+                            this.blocking = true;
                             KeyBindUtil.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), true);
                             startBlocking = true;
                         } else if (startBlocking) {
                             KeyBindUtil.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), false);
                             startBlocking = false;
+                            this.blocking = false;
                         }
                     }
                     if (autoBlockTime.getValue() == 2){
                         if (sagTicks < 10) {
+                            this.blocking = true;
                             KeyBindUtil.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), true);
                             sagTicks++;
                         }
                         if (sagTicks >= 10){
                             KeyBindUtil.updateKeyState(mc.gameSettings.keyBindUseItem.getKeyCode());
                             sagTicks = 0;
+                            this.blocking = false;
                         }
                     }
                     if (autoBlockTime.getValue() == 3){
@@ -144,12 +173,14 @@ public class BlockHit extends Module {
                         }
                         if (canBlock){
                             getBlockTicks++;
+                            this.blocking = true;
                             KeyBindUtil.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), true);
                         }
-                        if (getBlockTicks > smartBlockTick.getValue()){
+                        if (getBlockTicks > smartBlockTick.getValue() + this.getLatencyTicks()){
                             canBlock = false;
                             KeyBindUtil.updateKeyState(mc.gameSettings.keyBindUseItem.getKeyCode());
                             getBlockTicks = 0;
+                            this.blocking = false;
                         }
                     }
                 }
@@ -161,6 +192,7 @@ public class BlockHit extends Module {
                     Unfair.blinkManager.setBlinkState(true, BlinkModules.AUTO_BLOCK);
                 }
                 if (blockTicks >= 1){
+                    this.blocking = true;
                     KeyBindUtil.setKeyBindState(mc.gameSettings.keyBindUseItem.getKeyCode(), true);
                     blockTicks++;
                 }
@@ -171,9 +203,10 @@ public class BlockHit extends Module {
                     Unfair.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
                     blinkTicks = 0;
                 }
-                if (blockTicks > blockTick.getValue()){
+                if (blockTicks > blockTick.getValue() + this.getLatencyTicks()){
                     KeyBindUtil.updateKeyState(mc.gameSettings.keyBindUseItem.getKeyCode());
                     blockTicks = 0;
+                    this.blocking = false;
                 }
             }
         }
@@ -182,6 +215,7 @@ public class BlockHit extends Module {
         attacking = canBlock = false;
         KeyBindUtil.updateKeyState(mc.gameSettings.keyBindUseItem.getKeyCode());
         holdTicks = sagTicks = getBlockTicks = 0;
+        this.blocking = false;
         timer.reset();
     }
     private void startBlock(ItemStack itemStack) {
@@ -198,6 +232,20 @@ public class BlockHit extends Module {
                 if (mc.thePlayer.hurtTime == 0)canBlock = true;
             }
         }
+    }
+
+    @Override
+    public void onDisabled() {
+        reset();
+        target = null;
+        attacking = false;
+        attackTicks = 0;
+        startBlocking = false;
+        blockTicks = 0;
+        blinkTicks = 0;
+        this.blocking = false;
+        KeyBindUtil.updateKeyState(mc.gameSettings.keyBindUseItem.getKeyCode());
+        Unfair.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
     }
     @Override
     public String[] getSuffix() {

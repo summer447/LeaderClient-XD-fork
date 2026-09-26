@@ -6,6 +6,7 @@ import unfair.util.ChatUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class HelpCommand extends Command {
     public HelpCommand() {
@@ -14,9 +15,9 @@ public class HelpCommand extends Command {
 
     @Override
     public void runCommand(ArrayList<String> args) {
-        if (!Unfair.moduleManager.modules.isEmpty()) {
+        if (!Objects.requireNonNull(Unfair.moduleManager).modules.isEmpty()) {
             ChatUtil.sendFormatted(String.format("%sCommands:&r", Unfair.clientName));
-            for (Command command : Unfair.commandManager.commands) {
+            for (Command command : Objects.requireNonNull(Unfair.commandManager).commands) {
                 if (!(command instanceof ModuleCommand)) {
                     ChatUtil.sendFormatted(String.format("&7»&r .%s&r", String.join(" &7/&r .", command.names)));
                 }

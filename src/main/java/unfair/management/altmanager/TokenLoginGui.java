@@ -2,6 +2,7 @@ package unfair.management.altmanager;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
@@ -11,6 +12,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import unfair.management.altmanager.microsoft.MicrosoftOAuthTranslation;
+import unfair.ui.MaterialYou;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -44,10 +46,15 @@ public class TokenLoginGui extends GuiScreen {
     }
 
     @Override
+    public void drawDefaultBackground() {
+    }
+
+    @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        this.drawDefaultBackground();
-        drawCenteredString(this.fontRendererObj, "Token Login", this.width / 2, 30, 0xFFFFFF);
-        this.fontRendererObj.drawStringWithShadow("Enter Access Token or Refresh Token:", this.tokenField.xPosition, this.tokenField.yPosition - 12, 0xAAAAAA);
+        MaterialYou.Scheme scheme = MaterialYou.getScheme();
+        Gui.drawRect(0, 0, this.width, this.height, scheme.getSurfaceContainer());
+        drawCenteredString(this.fontRendererObj, "Token Login", this.width / 2, 30, scheme.getOnSurface());
+        this.fontRendererObj.drawString("Enter Access Token or Refresh Token:", this.tokenField.xPosition, this.tokenField.yPosition - 12, scheme.getOnSurfaceVariant());
         this.tokenField.drawTextBox();
         super.drawScreen(mouseX, mouseY, partialTicks);
     }

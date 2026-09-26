@@ -2,6 +2,7 @@ package unfair.module.modules.render;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.util.EnumChatFormatting;
 import org.lwjgl.opengl.GL11;
 import unfair.Unfair;
@@ -10,11 +11,13 @@ import unfair.events.Render2DEvent;
 import unfair.module.Module;
 import unfair.module.modules.player.Scaffold;
 import unfair.property.properties.FloatProperty;
+import unfair.property.properties.IntProperty;
 import unfair.property.properties.ModeProperty;
 import unfair.util.NotificationTask;
 import unfair.util.RenderUtil;
 import unfair.util.TimerUtil;
 import unfair.util.animations.advanced.ContinualAnimation;
+import unfair.util.shader.KawaseBlur;
 
 import java.awt.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -26,10 +29,11 @@ public class Island extends Module {
         super("Island",false,false);
     }
     public final ModeProperty blockCounterMode = new ModeProperty("Block Counter Style", 0, new String[]{"Bar", "Circle"});
-    public final ModeProperty blockCounterPosition = new ModeProperty("Block Counter Position", 0, new String[]{"Middle", "Top"});
+    public final ModeProperty blockCounterPosition = new ModeProperty("Block Counter Position", 1, new String[]{"Middle", "Top"});
     public final FloatProperty backgroundRadius = new FloatProperty("Background Radius", 4f, 0f, 20f);
     public float x, y, width, height;
     private ScaledResolution sr;
+    private Framebuffer stencilFramebuffer = new Framebuffer(1, 1, false);
     public ContinualAnimation animatedX = new ContinualAnimation();
     public ContinualAnimation animatedY = new ContinualAnimation();
     public ContinualAnimation animatedWidth = new ContinualAnimation();
@@ -40,21 +44,6 @@ public class Island extends Module {
         animatedY.animate(getRenderY(realY), 40);
         animatedWidth.animate(width, 40);
         animatedHeight.animate(height, 40);
-    }
-    public void drawBackgroundAuto(int identifier) {
-        float left = animatedX.getOutput();
-        float top = animatedY.getOutput();
-        float right = left + animatedWidth.getOutput();
-        float bottom = top + animatedHeight.getOutput() + (identifier == 1 ? 10 : 0);
-
-        float scissorH = animatedHeight.getOutput() + (identifier == 1 ? 10 : 0);
-        RenderUtil.scissor(left - 1, top - 1, animatedWidth.getOutput() + 2, scissorH + 2);
-
-        HUD hud = (HUD) Unfair.moduleManager.getModule(HUD.class);
-        RenderUtil.drawRect(left + 5, top + 1, left + animatedWidth.getOutput() - 5, top + 2,
-                hud.getColor(System.currentTimeMillis()).getRGB());
-        RenderUtil.drawRoundedRectangle(left, top, right, bottom,
-                backgroundRadius.getValue(), new Color(0, 0, 0, 70).getRGB());
     }
 
     private int fps = 0;
@@ -92,7 +81,7 @@ public class Island extends Module {
         }
         HUD hud = (HUD) Unfair.moduleManager.getModule(HUD.class);
 
-        if (Unfair.moduleManager.modules.get(Scaffold.class).isEnabled()) {
+        if (Unfair.moduleManager.modules.get(Scaffold.class).isEnabled() && Scaffold.mode.getValue() != 3) {
             title = "Block Counter";
             int size = Scaffold.count;
             description = "Stack Size: " + (size > 64 ? EnumChatFormatting.GREEN : size > 32 ? EnumChatFormatting.YELLOW : EnumChatFormatting.RED) + size;
@@ -103,20 +92,18 @@ public class Island extends Module {
             x = sr.getScaledWidth() / 2f;
             if (blockCounterPosition.getValue() == 0) {
                 y = sr.getScaledHeight() / 2f;
-            }
-            else {
+                x = sr.getScaledWidth() / 3f;
+            } else {
                 y = 40;
             }
             runToXy(x, y);
+            drawBlurBackground();
             if (this.blockCounterMode.getValue() == 0) {
                 float progress = Math.min(64, size) / 64f;
                 int barColor = hud.getColor(System.currentTimeMillis()).getRGB();
                 float left = animatedX.getOutput();
                 float top = animatedY.getOutput();
-                float right = left + width;
-                float bottom = top + height;
-                int accentColor = hud.getColor(System.currentTimeMillis()).getRGB();
-                drawPanelBackground(left, top, right, bottom + 10, backgroundRadius.getValue(), new Color(0, 0, 0, 70).getRGB(), false, accentColor);
+                RenderUtil.drawRect(left + 5, top + 1, left + animatedWidth.getOutput() - 5, top + 2, hud.getColor(System.currentTimeMillis()).getRGB());
 
                 float barLeft = animatedX.getOutput() + animatedWidth.getOutput() - 15;
                 float barTop = animatedY.getOutput() + 6;
@@ -127,7 +114,6 @@ public class Island extends Module {
                 float fillHeight = (barBottom - barTop) * progress;
                 float fillTop = barBottom - fillHeight;
                 RenderUtil.drawRect(barLeft + 2, fillTop + 1, barRight, barBottom + 1, barColor);
-
 
                 if (!shader) {
                     RenderUtil.drawFont(title, (int) (animatedX.getOutput() + 8), (int) (animatedY.getOutput() + 10), -1, true);
@@ -142,11 +128,8 @@ public class Island extends Module {
                 Color potCol = hud.getColor(System.currentTimeMillis());
                 float left = animatedX.getOutput();
                 float top = animatedY.getOutput();
-                float right = left + width;
-                float bottom = top + height;
-                int accentColor = hud.getColor(System.currentTimeMillis()).getRGB();
-                drawPanelBackground(left, top, right, bottom + 10, backgroundRadius.getValue(), new Color(0, 0, 0, 70).getRGB(), false, accentColor);
-                float circleCenterX = animatedX.getOutput() + animatedWidth.getOutput() - 22; // 微调，使圆居中
+                RenderUtil.drawRect(left + 5, top + 1, left + animatedWidth.getOutput() - 5, top + 2, hud.getColor(System.currentTimeMillis()).getRGB());
+                float circleCenterX = animatedX.getOutput() + animatedWidth.getOutput() - 22;
                 float circleCenterY = animatedY.getOutput() + animatedHeight.getOutput() / 2f;
                 RenderUtil.circle(circleCenterX, circleCenterY, 16, 360, false, new Color(0, 0, 0, 70));
                 RenderUtil.circle(circleCenterX, circleCenterY, 16, progress * 360, false,
@@ -163,7 +146,7 @@ public class Island extends Module {
                     RenderUtil.drawFont(description, (int)(animatedX.getOutput() + 8), (int)(animatedY.getOutput() + 22), -1, true);
                 }
             }
-        }else {
+        } else {
             CopyOnWriteArrayList<NotificationTask> notifications = Notification.tasks;
             if (!notifications.isEmpty()) {
                 notifications.removeIf(it -> Notification.tasks.isEmpty());
@@ -179,12 +162,8 @@ public class Island extends Module {
                     y = 40;
 
                     runToXy(x, y);
-                    float left = animatedX.getOutput();
-                    float top = animatedY.getOutput();
-                    float right = left + width;
-                    float bottom = top + height;
-                    int accentColor = hud.getColor(System.currentTimeMillis()).getRGB();
-                    drawPanelBackground(left, top, right, bottom + 10, backgroundRadius.getValue(), new Color(0, 0, 0, 70).getRGB(), false, accentColor);
+                    drawBlurBackground();
+                    RenderUtil.drawRect(animatedX.getOutput() + 5, animatedY.getOutput() + 1, animatedX.getOutput() + animatedWidth.getOutput() - 5, animatedY.getOutput() + 2, hud.getColor(System.currentTimeMillis()).getRGB());
                     RenderUtil.drawRect(animatedX.getOutput() + 6, animatedY.getOutput() + ((y - animatedY.getOutput()) * 2), animatedX.getOutput() + 6 + (width - 12) * Math.min(1, notification.getProgress()), animatedY.getOutput() + ((y - animatedY.getOutput()) * 2) + 2f, hud.getColor(System.currentTimeMillis()).getRGB());
 
                     if (!shader) {
@@ -205,12 +184,8 @@ public class Island extends Module {
                         x = sr.getScaledWidth() / 2f;
                         y = 40;
                         runToXy(x, y);
-                        float left = animatedX.getOutput();
-                        float top = animatedY.getOutput();
-                        float right = left + width;
-                        float bottom = top + height;
-                        int accentColor = hud.getColor(System.currentTimeMillis()).getRGB();
-                        drawPanelBackground(left, top, right, bottom + 10, backgroundRadius.getValue(), new Color(0, 0, 0, 70).getRGB(), false, accentColor);
+                        drawBlurBackground();
+                        RenderUtil.drawRect(animatedX.getOutput() + 5, animatedY.getOutput() + 1, animatedX.getOutput() + animatedWidth.getOutput() - 5, animatedY.getOutput() + 2, hud.getColor(System.currentTimeMillis()).getRGB());
                         RenderUtil.drawRect(animatedX.getOutput() + 6, animatedY.getOutput() + ((y - animatedY.getOutput()) * 2) + 1, animatedX.getOutput() + 6 + (width - 12) * Math.min(1, notification.getProgress()), animatedY.getOutput() + ((y - animatedY.getOutput()) * 2) + 3f, hud.getColor(System.currentTimeMillis()).getRGB());
 
                         if (!shader) {
@@ -229,19 +204,36 @@ public class Island extends Module {
                     y = 40;
 
                     runToXy(x, y);
-                    float left = animatedX.getOutput();
-                    float top = animatedY.getOutput();
-                    float right = left + width;
-                    float bottom = top + height;
-                    int accentColor = hud.getColor(System.currentTimeMillis()).getRGB();
-                    drawPanelBackground(left, top, right, bottom, backgroundRadius.getValue(), new Color(0, 0, 0, 70).getRGB(), false, accentColor);
+
+                    drawBlurBackground();
+
                     if (!shader) {
                         RenderUtil.drawFont(title, (int) (animatedX.getOutput() + 5), (int) (animatedY.getOutput() + 5), hud.getColor(System.currentTimeMillis()).getRGB(), true);
                     }
-
                 }
             }
         }
+    }
+
+    private void drawBlurBackground() {
+        float left = animatedX.getOutput();
+        float top = animatedY.getOutput();
+        float right = left + animatedWidth.getOutput();
+        float bottom = top + animatedHeight.getOutput();
+
+        float heightOffset = 0;
+        if (Unfair.moduleManager.modules.get(Scaffold.class).isEnabled() && this.blockCounterMode.getValue() == 0) {
+            heightOffset = 10;
+        }
+
+        stencilFramebuffer = RenderUtil.createFrameBuffer(stencilFramebuffer);
+
+        stencilFramebuffer.framebufferClear();
+        stencilFramebuffer.bindFramebuffer(false);
+
+        RenderUtil.drawRoundedRectangle(left, top, right, bottom + heightOffset, backgroundRadius.getValue(), Color.WHITE.getRGB());
+
+        KawaseBlur.renderBlur(stencilFramebuffer.framebufferTexture, 3, 5f);
     }
 
     private void getSmoothFps() {
@@ -259,11 +251,5 @@ public class Island extends Module {
 
     public float getRenderY(float y) {
         return y - height / 2;
-    }
-    private void drawPanelBackground(float left, float top, float right, float bottom, float radius, int bgColor, boolean drawTopLine, int accentColor) {
-        RenderUtil.drawRoundedRectangle(left, top, right, bottom, radius, bgColor);
-        if (drawTopLine) {
-            RenderUtil.drawRect(left + 5, top + 1, right - 5, top + 2, accentColor);
-        }
     }
 }

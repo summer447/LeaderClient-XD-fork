@@ -194,7 +194,7 @@ public class BackTrack extends Module {
 
          if (timedPacket.getCold().getCum(maxDelay)) {
             packetQueue.poll();
-            Packet<?> packet = timedPacket.getPacket();
+            Packet<?> packet = timedPacket.packet;
             skipPackets.add(packet);
             PacketUtil.receivePacket(packet);
          } else {
@@ -334,7 +334,7 @@ public class BackTrack extends Module {
       while (!packetQueue.isEmpty()) {
          TimedPacket tp = packetQueue.poll();
          if (tp != null) {
-            Packet<?> packet = tp.getPacket();
+            Packet<?> packet = tp.packet;
             skipPackets.add(packet);
             PacketUtil.receivePacket(packet);
          }
