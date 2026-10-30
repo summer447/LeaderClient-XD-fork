@@ -3,11 +3,14 @@ package unfair.ui.gui
 import net.minecraft.client.gui.GuiButton
 import net.minecraft.client.gui.GuiScreen
 import net.minecraft.client.gui.GuiSelectWorld
+import org.lwjgl.input.Keyboard
 import unfair.ui.LeaderButton
 import unfair.ui.MaterialYou
 import java.io.IOException
 
 class GuiSinglePlayerClient(parentScreenIn: GuiScreen?) : GuiSelectWorld(parentScreenIn) {
+    private val parent = parentScreenIn
+
     override fun initGui() {
         super.initGui()
         for (i in this.buttonList.indices) {
@@ -36,6 +39,15 @@ class GuiSinglePlayerClient(parentScreenIn: GuiScreen?) : GuiSelectWorld(parentS
     @Throws(IOException::class)
     public override fun actionPerformed(button: GuiButton?) {
         super.actionPerformed(button)
+    }
+
+    @Throws(IOException::class)
+    override fun keyTyped(typedChar: Char, keyCode: Int) {
+        if (keyCode == Keyboard.KEY_ESCAPE) {
+            this.mc.displayGuiScreen(parent)
+            return
+        }
+        super.keyTyped(typedChar, keyCode)
     }
 
     @Throws(IOException::class)

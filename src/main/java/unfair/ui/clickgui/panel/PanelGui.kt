@@ -20,11 +20,7 @@ import unfair.property.properties.*
 import unfair.ui.clickgui.panel.config.ConfigEntry
 import unfair.ui.clickgui.panel.config.CreateConfigEntry
 import unfair.ui.clickgui.panel.config.SettingsEntry
-import unfair.ui.clickgui.panel.settings.BoolSetting
-import unfair.ui.clickgui.panel.settings.ColorSetting
-import unfair.ui.clickgui.panel.settings.ModeSetting
-import unfair.ui.clickgui.panel.settings.RangeSliderSetting
-import unfair.ui.clickgui.panel.settings.SliderSetting
+import unfair.ui.clickgui.panel.settings.*
 import unfair.util.RenderUtil
 import unfair.util.shader.BlurUtils.blurEnd
 import unfair.util.shader.BlurUtils.prepareBlur
@@ -1412,7 +1408,7 @@ class PanelGui : GuiScreen() {
         var hideAnim: Float = if (mod.isHidden) 1f else 0f
 
         init {
-            val props: MutableList<Property<*>?>? = Unfair.propertyManager!!.properties[mod.javaClass]
+            val props: MutableList<Property<*>>? = Unfair.propertyManager!!.getProperties(mod)
             if (props != null) {
                 for (p in props) {
                     var setting: PanelValueItem? = null
@@ -1426,7 +1422,7 @@ class PanelGui : GuiScreen() {
                     } else if (p is ColorProperty) setting = ColorSetting(p)
 
                     if (setting != null) {
-                        setting.initVisibility(p!!.isVisible)
+                        setting.initVisibility(p.isVisible)
                         settings.add(setting)
                     }
                 }

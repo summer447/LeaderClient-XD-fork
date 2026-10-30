@@ -9,6 +9,7 @@ import unfair.event.types.Priority
 import unfair.events.PacketEvent
 import unfair.util.ChatUtil
 import java.io.File
+import java.net.URL
 import java.util.Comparator
 import java.util.jar.JarFile
 
@@ -42,8 +43,11 @@ class CommandManager {
             while (resources.hasMoreElements()) {
                 val url = resources.nextElement()
                 if (url.protocol == "jar") {
-                    val jarPath = url.path.substring(5, url.path.indexOf("!"))
-                    JarFile(jarPath).use { jar ->
+                    // Round-trip through URL->URI->File so spaces/non-ASCII
+                    // characters in the path (percent-encoded in the jar URL)
+                    // are decoded before opening the file.
+                    val nestedUrl = url.path.substring(0, url.path.indexOf("!"))
+                    JarFile(File(URL(nestedUrl).toURI())).use { jar ->
                         val entries = jar.entries()
                         while (entries.hasMoreElements()) {
                             val entry = entries.nextElement()

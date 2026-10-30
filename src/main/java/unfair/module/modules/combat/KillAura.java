@@ -83,6 +83,7 @@ public class KillAura extends Module {
     public final ModeProperty rotations;
     public final ModeProperty moveFix;
     public final PercentProperty smoothing;
+    public final BooleanProperty legit;
     public final IntProperty angleStep;
     public final BooleanProperty throughWalls;
     public final BooleanProperty requirePress;
@@ -102,6 +103,7 @@ public class KillAura extends Module {
     public final ModeProperty showTarget;
 
     private final TimerUtil timer = new TimerUtil();
+    private final Random legitRandom = new Random();
     private AttackData target = null;
     private int switchTick = 0;
     private boolean hitRegistered = false;
@@ -113,6 +115,9 @@ public class KillAura extends Module {
     private boolean swapped = false;
     private boolean postBlock = false;
     private boolean postSwap = false;
+    private Vec3 legitAimPoint = null;
+    private long legitAimRefreshTime = 0L;
+    private EntityLivingBase legitAimTarget = null;
 
 
     public KillAura() throws AWTException {
@@ -134,6 +139,7 @@ public class KillAura extends Module {
         this.switchDelay = new IntProperty("Switch Delay", 150, 0, 1000);
         this.rotations = new ModeProperty("Rotations", 2, new String[]{"None", "Legit", "Silent", "Lock View"});
         this.moveFix = new ModeProperty("Move Fix", 1, new String[]{"None", "Silent", "Strict"});
+        this.legit = new BooleanProperty("Legit", false, () -> this.rotations.getValue() == 2 || this.rotations.getValue() == 3);
         this.smoothing = new PercentProperty("Smoothing", 0);
         this.angleStep = new IntProperty("Angle Step", 90, 30, 180);
         this.throughWalls = new BooleanProperty("Through Walls", true);
@@ -355,6 +361,28 @@ public class KillAura extends Module {
 
     private boolean isBoxInAttackRange(AxisAlignedBB axisAlignedBB) {
         return RotationUtil.distanceToBox(axisAlignedBB) <= (double) this.attackRange.getValue();
+    }
+
+    private Vec3 getLegitAimPoint(AxisAlignedBB box) {
+        EntityLivingBase entity = this.target.getEntity();
+        long now = System.currentTimeMillis();
+        if (this.legitAimPoint == null || this.legitAimTarget != entity || now >= this.legitAimRefreshTime) {
+            this.legitAimTarget = entity;
+            this.legitAimRefreshTime = now + RandomUtil.nextLong(400L, 800L);
+            double widthX = box.maxX - box.minX;
+            double widthZ = box.maxZ - box.minZ;
+            double height = box.maxY - box.minY;
+            // Humans mostly aim at chest/head with a small spread
+            double yRatio = 0.6D + this.legitRandom.nextDouble() * 0.15D;
+            double xOff = (this.legitRandom.nextDouble() - 0.5D) * widthX * 0.16D;
+            double zOff = (this.legitRandom.nextDouble() - 0.5D) * widthZ * 0.16D;
+            this.legitAimPoint = new Vec3(
+                    (box.minX + box.maxX) / 2.0D + xOff,
+                    box.minY + height * yRatio,
+                    (box.minZ + box.maxZ) / 2.0D + zOff
+            );
+        }
+        return this.legitAimPoint;
     }
 
     private boolean isPlayerTarget(EntityLivingBase entityLivingBase) {
@@ -646,13 +674,29 @@ public class KillAura extends Module {
                 boolean attacked = false;
                 if (this.isBoxInSwingRange(this.target.getBox())) {
                     if (this.rotations.getValue() == 2 || this.rotations.getValue() == 3) {
-                        float[] rotations = RotationUtil.getRotationsToBox(
-                                this.target.getBox(),
-                                event.getYaw(),
-                                event.getPitch(),
-                                (float) this.angleStep.getValue() + RandomUtil.nextFloat(-5.0F, 5.0F),
-                                (float) this.smoothing.getValue() / 100.0F
-                        );
+                        float maxAngle = (float) this.angleStep.getValue() + RandomUtil.nextFloat(-5.0F, 5.0F);
+                        float smoothFactor = (float) this.smoothing.getValue() / 100.0F;
+                        float[] rotations;
+                        if (this.legit.getValue()) {
+                            Vec3 aimPoint = this.getLegitAimPoint(this.target.getBox());
+                            rotations = RotationUtil.getLegitRotations(
+                                    aimPoint.xCoord,
+                                    aimPoint.yCoord,
+                                    aimPoint.zCoord,
+                                    event.getYaw(),
+                                    event.getPitch(),
+                                    maxAngle,
+                                    smoothFactor
+                            );
+                        } else {
+                            rotations = RotationUtil.getRotationsToBox(
+                                    this.target.getBox(),
+                                    event.getYaw(),
+                                    event.getPitch(),
+                                    maxAngle,
+                                    smoothFactor
+                            );
+                        }
                         event.setRotation(rotations[0], rotations[1], 1);
                         if (this.rotations.getValue() == 3) {
                             Unfair.rotationManager.setRotation(rotations[0], rotations[1], 1, true);
@@ -718,6 +762,8 @@ public class KillAura extends Module {
                         }
                         if (targets.isEmpty()) {
                             this.target = null;
+                            this.legitAimPoint = null;
+                            this.legitAimTarget = null;
                         } else {
                             if (targets.stream().anyMatch(this::isInSwingRange)) {
                                 targets.removeIf(entityLivingBase -> !this.isInSwingRange(entityLivingBase));
@@ -945,6 +991,8 @@ public class KillAura extends Module {
         this.hitRegistered = false;
         this.attackDelayMS = 0L;
         this.blockTick = 0;
+        this.legitAimPoint = null;
+        this.legitAimTarget = null;
     }
 
     @Override

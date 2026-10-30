@@ -15,18 +15,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-/**
- * AutoGG：监听到游戏结束类聊天消息后，延迟随机发送一条 GG。
- * 触发词与发送内容均支持逗号分隔配置。
- */
 public class AutoGG extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
     private static final Random RANDOM = new Random();
 
-    private final TextProperty triggers = new TextProperty(
-            "Triggers",
-            "won the game,game over,winner:,victory,1st killer,you earned,match over,game ended,defeat"
-    );
     private final TextProperty messages = new TextProperty("Messages", "gg");
     private final IntProperty delay = new IntProperty("Delay Ticks", 20, 0, 200);
 
@@ -66,7 +58,8 @@ public class AutoGG extends Module {
         }
         String lower = text.toLowerCase();
 
-        for (String trigger : split(this.triggers.getValue())) {
+        String triggers = "won the game,game over,winner:,victory,1st killer,you earned,match over,game ended,defeat";
+        for (String trigger : split(triggers)) {
             if (lower.contains(trigger.toLowerCase())) {
                 this.pendingTicks = this.delay.getValue();
                 return;

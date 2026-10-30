@@ -14,6 +14,7 @@ class UFontRenderer(name: String?, private val size: Int) : FontRenderer(
     Minecraft.getMinecraft().textureManager,
     false
 ) {
+    private val fontName: String? = name
     private val stringCache: StringCache
 
     init {
@@ -168,7 +169,7 @@ class UFontRenderer(name: String?, private val size: Int) : FontRenderer(
         if (scaledSize == size) {
             return this
         }
-        return Unfair.fontManager!!.getFont(scaledSize)
+        return Unfair.fontManager!!.getFont(fontName, scaledSize)
     }
 
     fun drawStringCapableWithEmojiWithShadow(text: String, x: Float, y: Float, color: Int): Float {

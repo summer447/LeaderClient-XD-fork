@@ -55,16 +55,15 @@ public class Config {
 
             JsonObject jsonObject = parsed.getAsJsonObject();
 
-            // 一次性迁移：ArrayList 从 HUD 拆分而来，旧配置中这些键仍在 HUD 名下。
-            // ArrayList 节点缺失的同名属性 / toggled / hidden 从 HUD 节点补齐。
             this.migrateArrayListFromHud(jsonObject);
 
-            for (Module module : Unfair.moduleManager.modules.values()) {
+            List<Module> allModules = new ArrayList<>(Unfair.moduleManager.modules.values());
+            for (Module module : allModules) {
                 JsonElement moduleObj = jsonObject.get(module.getName());
                 if (moduleObj != null && moduleObj.isJsonObject()) {
                     JsonObject object = moduleObj.getAsJsonObject();
 
-                    ArrayList<Property<?>> list = Unfair.propertyManager.properties.get(module.getClass());
+                    ArrayList<Property<?>> list = Unfair.propertyManager.getProperties(module);
                     if (list != null) {
                         for (Property<?> property : list) {
                             if (object.has(property.getName())) {
@@ -201,13 +200,14 @@ public class Config {
             }
 
             JsonObject object = new JsonObject();
-            for (Module module : Unfair.moduleManager.modules.values()) {
+            List<Module> allModules = new ArrayList<>(Unfair.moduleManager.modules.values());
+            for (Module module : allModules) {
                 JsonObject moduleObject = new JsonObject();
                 moduleObject.addProperty("toggled", module.isEnabled());
                 moduleObject.addProperty("key", module.getKey());
                 moduleObject.addProperty("hidden", module.isHidden());
 
-                ArrayList<Property<?>> list = Unfair.propertyManager.properties.get(module.getClass());
+                ArrayList<Property<?>> list = Unfair.propertyManager.getProperties(module);
                 if (list != null) {
                     for (Property<?> property : list) {
                         try {

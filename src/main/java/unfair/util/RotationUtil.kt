@@ -178,6 +178,61 @@ object RotationUtil {
         return floatArrayOf(quantizeAngle(currentYaw + yawDelta), quantizeAngle(currentPitch + pitchDelta))
     }
 
+    // 1.2 * (0.6 * 0.25 + 0.2)^3 — one mouse count at a real 25% sensitivity.
+    // Every legit rotation delta is an integer multiple of this unit, so the
+    // gcd of recent deltas never drops below the minimum real mouse unit (0.0096).
+    private const val LEGIT_MOUSE_UNIT = 0.05145f
+
+    @JvmStatic
+    fun getLegitRotations(
+        aimX: Double,
+        aimY: Double,
+        aimZ: Double,
+        currentYaw: Float,
+        currentPitch: Float,
+        maxAngle: Float,
+        smoothFactor: Float
+    ): FloatArray {
+        val eyePos = mc.thePlayer.getPositionEyes(1.0f)
+        val deltaX = aimX - eyePos.xCoord
+        val deltaY = aimY - eyePos.yCoord
+        val deltaZ = aimZ - eyePos.zCoord
+        val horizontalDistance = sqrt(deltaX * deltaX + deltaZ * deltaZ)
+        val idealYaw = (atan2(deltaZ, deltaX) * 180.0 / Math.PI).toFloat() - 90.0f
+        val idealPitch = MathHelper.clamp_float(
+            (-atan2(deltaY, horizontalDistance) * 180.0 / Math.PI).toFloat(), -90.0f, 90.0f
+        )
+
+        val yawDelta = MathHelper.wrapAngleTo180_float(idealYaw - currentYaw)
+        val pitchDelta = MathHelper.wrapAngleTo180_float(idealPitch - currentPitch)
+
+        // Ease-out step: larger remaining angle -> larger step, with per-tick speed variance.
+        // Deceleration comes from the shrinking delta, so speed ramps down smoothly
+        // instead of collapsing to 0 when the crosshair enters the target box.
+        val speed = 1.0f - 0.6f * max(0.0f, min(1.0f, smoothFactor))
+        val yawStep = clampAngle(yawDelta * speed * RandomUtil.nextFloat(0.8f, 1.0f), maxAngle)
+        val pitchStep = clampAngle(pitchDelta * speed * RandomUtil.nextFloat(0.8f, 1.0f), maxAngle * 0.8f)
+
+        // Quantize deltas to whole mouse counts of a real sensitivity unit
+        var yawSteps = Math.round(yawStep / LEGIT_MOUSE_UNIT)
+        var pitchSteps = Math.round(pitchStep / LEGIT_MOUSE_UNIT)
+
+        // Keep converging when rounding would stall on a real remaining error
+        if (yawSteps == 0 && abs(yawDelta) >= LEGIT_MOUSE_UNIT) yawSteps = if (yawDelta > 0.0f) 1 else -1
+        if (pitchSteps == 0 && abs(pitchDelta) >= LEGIT_MOUSE_UNIT) pitchSteps = if (pitchDelta > 0.0f) 1 else -1
+
+        // Settled on target: deterministic micro-oscillation (±1 mouse count).
+        // Guarantees every tick's rotation speed is non-zero (anti-stutter),
+        // stays bounded, and doesn't random-walk away from the aim point.
+        val yawOsc = if ((mc.thePlayer.ticksExisted % 2) == 0) 1 else -1
+        if (yawSteps == 0) yawSteps = yawOsc
+        if (pitchSteps == 0) pitchSteps = -yawOsc
+
+        val newYaw = currentYaw + yawSteps * LEGIT_MOUSE_UNIT
+        val newPitch = MathHelper.clamp_float(currentPitch + pitchSteps * LEGIT_MOUSE_UNIT, -90.0f, 90.0f)
+        return floatArrayOf(newYaw, newPitch)
+    }
+
     fun getClosestPointOnBox(point: Vec3, bb: AxisAlignedBB): Vec3 {
         val x = MathHelper.clamp_double(point.xCoord, bb.minX, bb.maxX)
         val y = MathHelper.clamp_double(point.yCoord, bb.minY, bb.maxY)

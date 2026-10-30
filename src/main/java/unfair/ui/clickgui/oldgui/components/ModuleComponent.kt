@@ -34,50 +34,64 @@ class ModuleComponent(var mod: Module, @JvmField var category: CategoryComponent
 
     init {
         var y = yPos + 12
-        if (!Objects.requireNonNull<PropertyManager>(Unfair.propertyManager).properties.get(
-                mod.javaClass
-            )!!.isEmpty()
+        if (!Objects.requireNonNull<PropertyManager>(Unfair.propertyManager).properties[mod.javaClass]!!.isEmpty()
         ) {
-            for (baseProperty in Unfair.propertyManager!!.properties.get(mod.javaClass)!!) {
-                if (baseProperty is BooleanProperty) {
-                    val property = baseProperty
-                    val c = CheckBoxComponent(property, this, y)
-                    this.settings.add(c)
-                    y += c.height
-                } else if (baseProperty is RangeProperty) {
-                    val c = RangeSliderComponent(baseProperty, this, y)
-                    this.settings.add(c)
-                    y += c.height
-                } else if (baseProperty is FloatProperty) {
-                    val property = baseProperty
-                    val c = SliderComponent(FloatSlider(property), this, y)
-                    this.settings.add(c)
-                    y += c.height
-                } else if (baseProperty is IntProperty) {
-                    val property = baseProperty
-                    val c = SliderComponent(IntSlider(property), this, y)
-                    this.settings.add(c)
-                    y += c.height
-                } else if (baseProperty is PercentProperty) {
-                    val property = baseProperty
-                    val c = SliderComponent(PercentageSlider(property), this, y)
-                    this.settings.add(c)
-                    y += c.height
-                } else if (baseProperty is ModeProperty) {
-                    val property = baseProperty
-                    val c = ModeComponent(property, this, y)
-                    this.settings.add(c)
-                    y += c.height
-                } else if (baseProperty is ColorProperty) {
-                    val property = baseProperty
-                    val c = ColorSliderComponent(property, this, y)
-                    this.settings.add(c)
-                    y += c.height
-                } else if (baseProperty is TextProperty) {
-                    val property = baseProperty
-                    val c = TextComponent(property, this, y)
-                    this.settings.add(c)
-                    y += c.height
+            for (baseProperty in Unfair.propertyManager!!.properties[mod.javaClass]!!) {
+                when (baseProperty) {
+                    is BooleanProperty -> {
+                        val property = baseProperty
+                        val c = CheckBoxComponent(property, this, y)
+                        this.settings.add(c)
+                        y += c.height
+                    }
+
+                    is RangeProperty -> {
+                        val c = RangeSliderComponent(baseProperty, this, y)
+                        this.settings.add(c)
+                        y += c.height
+                    }
+
+                    is FloatProperty -> {
+                        val property = baseProperty
+                        val c = SliderComponent(FloatSlider(property), this, y)
+                        this.settings.add(c)
+                        y += c.height
+                    }
+
+                    is IntProperty -> {
+                        val property = baseProperty
+                        val c = SliderComponent(IntSlider(property), this, y)
+                        this.settings.add(c)
+                        y += c.height
+                    }
+
+                    is PercentProperty -> {
+                        val property = baseProperty
+                        val c = SliderComponent(PercentageSlider(property), this, y)
+                        this.settings.add(c)
+                        y += c.height
+                    }
+
+                    is ModeProperty -> {
+                        val property = baseProperty
+                        val c = ModeComponent(property, this, y)
+                        this.settings.add(c)
+                        y += c.height
+                    }
+
+                    is ColorProperty -> {
+                        val property = baseProperty
+                        val c = ColorSliderComponent(property, this, y)
+                        this.settings.add(c)
+                        y += c.height
+                    }
+
+                    is TextProperty -> {
+                        val property = baseProperty
+                        val c = TextComponent(property, this, y)
+                        this.settings.add(c)
+                        y += c.height
+                    }
                 }
             }
         }
@@ -110,7 +124,7 @@ class ModuleComponent(var mod: Module, @JvmField var category: CategoryComponent
                 0f,
                 originalHoverAlpha.toFloat(),
                 1
-            ) else if (hoverTimer != null && !hovering) originalHoverAlpha - hoverTimer!!.getValueFloat(
+            ) else if (hoverTimer != null) originalHoverAlpha - hoverTimer!!.getValueFloat(
                 0f,
                 originalHoverAlpha.toFloat(),
                 1
@@ -136,10 +150,10 @@ class ModuleComponent(var mod: Module, @JvmField var category: CategoryComponent
         if (smoothTimer != null) {
             if (isAnimatingHeight) {
                 // Height change animation (for mode switches)
-                if (targetHeight > smoothingY) {
-                    smoothingY = smoothTimer!!.getValueInt(smoothingY, targetHeight, 1)
+                smoothingY = if (targetHeight > smoothingY) {
+                    smoothTimer!!.getValueInt(smoothingY, targetHeight, 1)
                 } else {
-                    smoothingY = smoothTimer!!.getValueInt(targetHeight, smoothingY, 1)
+                    smoothTimer!!.getValueInt(targetHeight, smoothingY, 1)
                 }
                 if (smoothingY == targetHeight) {
                     smoothTimer = null

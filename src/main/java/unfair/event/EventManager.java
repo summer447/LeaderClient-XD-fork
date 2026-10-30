@@ -109,8 +109,11 @@ public final class EventManager {
             while (resources.hasMoreElements()) {
                 URL url = resources.nextElement();
                 if (url.getProtocol().equals("jar")) {
-                    String jarPath = url.getPath().substring(5, url.getPath().indexOf("!"));
-                    try (JarFile jar = new JarFile(jarPath)) {
+                    // The nested URL is percent-encoded: usernames with spaces or
+                    // non-ASCII characters (%E5%BC%A0...) would break a raw path.
+                    // Round-trip through URL->URI->File to decode it correctly.
+                    String nestedUrl = url.getPath().substring(0, url.getPath().indexOf('!'));
+                    try (JarFile jar = new JarFile(new File(new URL(nestedUrl).toURI()))) {
                         Enumeration<JarEntry> entries = jar.entries();
                         while (entries.hasMoreElements()) {
                             JarEntry entry = entries.nextElement();

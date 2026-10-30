@@ -2,6 +2,8 @@ package unfair.module.modules.player;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
@@ -12,6 +14,7 @@ import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.WorldSettings.GameType;
 import org.apache.commons.lang3.RandomUtils;
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.opengl.GL11;
 import unfair.Unfair;
 import unfair.event.EventTarget;
 import unfair.event.types.EventType;
@@ -21,11 +24,14 @@ import unfair.management.RotationState;
 import unfair.module.Module;
 import unfair.module.modules.misc.BedNuker;
 import unfair.module.modules.movement.LongJump;
+import unfair.module.modules.render.HUD;
 import unfair.property.properties.BooleanProperty;
 import unfair.property.properties.FloatProperty;
 import unfair.property.properties.IntProperty;
 import unfair.property.properties.ModeProperty;
 import unfair.util.*;
+
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 
@@ -36,15 +42,16 @@ public class Scaffold extends Module {
             0.53125, 0.59375, 0.65625, 0.71875, 0.78125, 0.84375, 0.90625, 0.96875
     };
 
-    public static final ModeProperty mode = new ModeProperty("Mode", 1, new String[]{"Normal", "Telly", "Snap", "Legit", "Extra", "GodBridge", "Breezily"});
+    public static final ModeProperty mode = new ModeProperty("Mode", 1, new String[]{"Normal", "Telly", "Snap", "Legit", "Extra", "GodBridge", "Breezily", "Vulcan GodBridge"});
     public final ModeProperty rotationMode = new ModeProperty("Rotate Mode", 3, new String[]{"None", "Vanilla", "Backwards", "Prediction"}, () -> mode.getValue() != 3);
     public final ModeProperty towerMode = new ModeProperty("Tower Mode", 0, new String[]{"None", "Vanilla", "Motion", "Jump", "Extra", "Vulcan", "Karhu", "JumpExtra", "Hypixel"}, () -> mode.getValue() != 3);
     public final ModeProperty rotationExtraMode = new ModeProperty("Rotate Extra Mode", 1, new String[]{"Telly", "Extra"}, () -> mode.getValue() == 4);
     public final ModeProperty moveFix = new ModeProperty("Move Fix", 1, new String[]{"None", "Silent"}, () -> mode.getValue() != 3);
     public final IntProperty jumpDelay = new IntProperty("Jump Delay", 2, 0, 20, () -> mode.getValue() == 1);
     public final IntProperty placeDelay = new IntProperty("Place Delay", 1, 0, 5, () -> mode.getValue() != 3);
-    public final FloatProperty startRotSpeed = new FloatProperty("Start Rotate Speed", 180.0F, 40.0F, 180.0F, () -> mode.getValue() != 3 && rotationExtraMode.getValue() != 1);
-    public final FloatProperty normalRotSpeed = new FloatProperty("Normal Rotate Speed", 180.0F, 40.0F, 180.0F, () -> mode.getValue() != 3 && rotationExtraMode.getValue() != 1);
+    public final IntProperty bridgeDelay = new IntProperty("Bridge Delay", 10, 0, 40, () -> mode.getValue() == 7);
+    public final FloatProperty startRotSpeed = new FloatProperty("Start Rotate Speed", 180.0F, 40.0F, 180.0F, () -> mode.getValue() != 3 || rotationExtraMode.getValue() != 1);
+    public final FloatProperty normalRotSpeed = new FloatProperty("Normal Rotate Speed", 180.0F, 40.0F, 180.0F, () -> mode.getValue() != 3 || rotationExtraMode.getValue() != 1);
     public final BooleanProperty swing = new BooleanProperty("Swing", true, () -> mode.getValue() != 3);
     public final BooleanProperty itemSpoof = new BooleanProperty("Item Spoof", false, () -> mode.getValue() != 3);
     public final BooleanProperty clutch = new BooleanProperty("Clutch", true, () -> mode.getValue() != 3 && mode.getValue() != 4);
@@ -74,7 +81,6 @@ public class Scaffold extends Module {
     private boolean clutchActive = false;
     private int clutchTickCounter = 0;
     private EnumFacing targetFacing = null;
-    public static int count = 0;
     private double savedMotionX;
     private double savedMotionY;
     private double savedMotionZ;
@@ -89,12 +95,13 @@ public class Scaffold extends Module {
     private int extraTowerTick = 0;
     private int extraTowerDelay = 0;
     // LiquidBounce bypass techniques
-    private boolean godbridgeSide = false;          // GodBridge 直走时的左/右 45° 侧
-    private float breezilySideways = 0.0F;          // Breezily 当前侧移方向 (-1/0/1)
-    private double breezilyEdge = 0.475D;           // Breezily 边缘距离随机值
-    private long breezilyLastAir = 0L;              // Breezily 上次处于悬空边缘的时间
-    private boolean towerPulled = false;            // Pulldown/Karhu 本次跳跃已下拉
-    private int towerAirTicks = 0;                  // Tower 空中 tick 计数
+    private boolean godbridgeSide = false;
+    private float breezilySideways = 0.0F;
+    private double breezilyEdge = 0.475D;
+    private long breezilyLastAir = 0L;
+    private boolean towerPulled = false;
+    private int towerAirTicks = 0;
+    private int bridgeGroundTicks = 0;
 
     public Scaffold() {
         super("Scaffold", false);
@@ -111,8 +118,7 @@ public class Scaffold extends Module {
         if (this.mode.getValue() == 3) {
             return false;
         }
-        // GodBridge/Breezily 依赖冲刺保持速度与跳跃节奏
-        if (this.mode.getValue() == 5 || this.mode.getValue() == 6) {
+        if (this.mode.getValue() == 5 || this.mode.getValue() == 6 || this.mode.getValue() == 7) {
             return false;
         }
         if (this.isTowering()) {
@@ -214,7 +220,7 @@ public class Scaffold extends Module {
      * LiquidBounce bypass 独立流程：计算 LB 风格旋转并放置方块。
      */
     private void handleBypass(UpdateEvent event, boolean tower) {
-        boolean godbridge = this.mode.getValue() == 5;
+        boolean godbridge = this.mode.getValue() == 5 || this.mode.getValue() == 7;
         float[] rotations = this.bypassRotations(godbridge, tower, event);
         this.yaw = rotations[0];
         this.pitch = rotations[1];
@@ -715,7 +721,7 @@ public class Scaffold extends Module {
                     }
                 }
                 // LiquidBounce bypass: 新技术或新 Tower 按住跳跃时走独立流程
-                boolean bypassTechnique = this.mode.getValue() == 5 || this.mode.getValue() == 6;
+                boolean bypassTechnique = this.mode.getValue() == 5 || this.mode.getValue() == 6 || this.mode.getValue() == 7;
                 boolean bypassTower = this.towerMode.getValue() >= 5 && mc.gameSettings.keyBindJump.isKeyDown();
                 if (bypassTechnique || bypassTower) {
                     this.handleBypass(event, bypassTower);
@@ -990,7 +996,10 @@ public class Scaffold extends Module {
         if (!this.isEnabled() || event.getType() != EventType.PRE) {
             return;
         }
-        int tower = this.towerMode.getValue();
+        boolean jumpHeld = mc.gameSettings.keyBindJump.isKeyDown();
+        // Vulcan GodBridge：自动跳跃（未按跳跃键）时复用 Tower "Vulcan" 的跳跃方式
+        boolean vulcanAutoJump = this.mode.getValue() == 7 && !jumpHeld;
+        int tower = vulcanAutoJump ? 5 : this.towerMode.getValue();
         if (tower < 5) {
             return;
         }
@@ -1002,7 +1011,7 @@ public class Scaffold extends Module {
         }
         this.towerAirTicks++;
 
-        if (!mc.gameSettings.keyBindJump.isKeyDown()
+        if ((!jumpHeld && !vulcanAutoJump)
                 || !this.isBlockBeneath() || this.blockCount <= 0) {
             return;
         }
@@ -1228,13 +1237,20 @@ public class Scaffold extends Module {
                 }
                 return;
             }
-            // GodBridge：地面上按住前进、走到边缘时自动起跳（保持冲刺跳跃节奏）
-            if (this.mode.getValue() == 5
+            // GodBridge/Vulcan GodBridge：地面上按住前进、走到边缘时自动起跳（保持冲刺跳跃节奏）
+            if ((this.mode.getValue() == 5 || this.mode.getValue() == 7)
                     && mc.thePlayer.onGround
                     && MoveUtil.isForwardPressed()
                     && !mc.gameSettings.keyBindJump.isKeyDown()
                     && this.isOnEdge()) {
-                mc.thePlayer.movementInput.jump = true;
+                // Vulcan GodBridge：落地后先多搭一段路，达到 Bridge Delay 后再自动起跳
+                if (this.mode.getValue() != 7 || this.bridgeGroundTicks >= this.bridgeDelay.getValue()) {
+                    mc.thePlayer.movementInput.jump = true;
+                    this.bridgeGroundTicks = 0;
+                }
+            }
+            if (this.mode.getValue() == 7 && mc.thePlayer.onGround) {
+                this.bridgeGroundTicks++;
             }
             // Breezily：前进时根据脚下边缘位置交替左右侧移
             if (this.mode.getValue() == 6) {
@@ -1284,7 +1300,24 @@ public class Scaffold extends Module {
                     }
                 }
             }
-            Scaffold.count = count;
+            HUD hud = (HUD) Unfair.moduleManager.modules.get(HUD.class);
+            float scale = hud.scale.getValue();
+            GlStateManager.pushMatrix();
+            GlStateManager.scale(scale, scale, 0.0F);
+            GlStateManager.disableDepth();
+            GlStateManager.enableBlend();
+            GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            mc.fontRendererObj
+                    .drawString(
+                            String.format("%d block%s left", count, count != 1 ? "s" : ""),
+                            ((float) new ScaledResolution(mc).getScaledWidth() / 2.0F + (float) mc.fontRendererObj.FONT_HEIGHT * 1.5F) / scale,
+                            (float) new ScaledResolution(mc).getScaledHeight() / 2.0F / scale - (float) mc.fontRendererObj.FONT_HEIGHT / 2.0F + 1.0F,
+                            (count > 0 ? Color.WHITE.getRGB() : new Color(255, 85, 85).getRGB()) | -1090519040,
+                            true
+                    );
+            GlStateManager.disableBlend();
+            GlStateManager.enableDepth();
+            GlStateManager.popMatrix();
         }
     }
 
@@ -1346,6 +1379,7 @@ public class Scaffold extends Module {
         this.breezilyLastAir = 0L;
         this.towerPulled = false;
         this.towerAirTicks = 0;
+        this.bridgeGroundTicks = 0;
     }
 
     @Override
@@ -1356,6 +1390,7 @@ public class Scaffold extends Module {
         }
         this.snapTickCounter = 0;
         this.eagleSneakDelay = 0;
+        this.bridgeGroundTicks = 0;
         // Extra Mode
         this.extraTowerTick = 0;
         this.extraTowerDelay = 0;

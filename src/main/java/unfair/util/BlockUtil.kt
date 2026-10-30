@@ -94,6 +94,7 @@ object BlockUtil {
         return getClickVec(blockPos, enumFacing)
     }
 
+    @JvmStatic
     fun getClickVec(blockPos: BlockPos, enumFacing: EnumFacing): Vec3 {
         val block = mc.theWorld.getBlockState(blockPos).block
         val vec3 = Vec3(

@@ -3,11 +3,14 @@ package unfair.ui.gui
 import net.minecraft.client.gui.GuiButton
 import net.minecraft.client.gui.GuiMultiplayer
 import net.minecraft.client.gui.GuiScreen
+import org.lwjgl.input.Keyboard
 import unfair.ui.LeaderButton
 import unfair.ui.MaterialYou
 import java.io.IOException
 
 class GuiMultiPlayerClient(parentScreen: GuiScreen?) : GuiMultiplayer(parentScreen) {
+    private val parent = parentScreen
+
     override fun initGui() {
         super.initGui()
         for (i in this.buttonList.indices) {
@@ -36,6 +39,15 @@ class GuiMultiPlayerClient(parentScreen: GuiScreen?) : GuiMultiplayer(parentScre
     @Throws(IOException::class)
     override fun actionPerformed(button: GuiButton?) {
         super.actionPerformed(button)
+    }
+
+    @Throws(IOException::class)
+    override fun keyTyped(typedChar: Char, keyCode: Int) {
+        if (keyCode == Keyboard.KEY_ESCAPE) {
+            this.mc.displayGuiScreen(parent)
+            return
+        }
+        super.keyTyped(typedChar, keyCode)
     }
 
     @Throws(IOException::class)

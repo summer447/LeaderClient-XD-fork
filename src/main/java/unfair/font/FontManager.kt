@@ -45,6 +45,14 @@ class FontManager {
         return getFont("NotoSansSC-Regular", size)
     }
 
+    fun getGoogleSansMedium(size: Int): UFontRenderer {
+        return getFont("googlesans-medium", size)
+    }
+
+    fun getGoogleSansRegular(size: Int): UFontRenderer {
+        return getFont("googlesans-regular", size)
+    }
+
     fun getFont(fontName: String?, size: Int): UFontRenderer {
         val sizeMap = fontCache.computeIfAbsent(fontName) { _: String? -> HashMap() }
         return sizeMap.computeIfAbsent(size) { _: Int? -> UFontRenderer(fontName, size) }

@@ -11,7 +11,7 @@ import unfair.ui.clickgui.panel.PanelGui;
 
 public class GuiModule extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
-    public final ModeProperty mode = new ModeProperty("Mode", 1, new String[]{"Drop Down", "Panel", "Old"});
+    public final ModeProperty mode = new ModeProperty("Mode", 0, new String[]{"Drop Down", "Panel", "Old"});
     public final BooleanProperty blur = new BooleanProperty("blur", false, () -> mode.getValue() == 2);
     private DropDownGui dropDownGui;
 

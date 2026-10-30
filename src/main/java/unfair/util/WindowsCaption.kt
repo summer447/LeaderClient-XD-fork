@@ -1,16 +1,19 @@
 package unfair.util
 
-import com.sun.jna.Native
-import com.sun.jna.Pointer
-import com.sun.jna.ptr.IntByReference
-import com.sun.jna.win32.StdCallLibrary
 import org.lwjgl.opengl.Display
 import unfair.ui.MaterialYou
 
 /**
  * Applies Material You colors to the native Windows window caption via DWM.
- * Uses only core JNA (bundled with Minecraft); the jna-platform jar is not on
- * the compile classpath.
+ *
+ * JNA is NOT bundled in the mod jar: it is expected to come from Minecraft's
+ * own libraries (1.8.9 ships net.java.dev.jna:jna:3.4.0). On launchers or
+ * machines where that jar is missing/corrupted, or has been quarantined by AV,
+ * every JNA type is confined to the nested [Dwm] object. Its bytecode — and
+ * therefore its bytecode verification — references no JNA class, so a
+ * NoClassDefFoundError/ExceptionInInitializerError surfaces only inside the
+ * try/Throwable guards here and the feature silently degrades to a no-op
+ * instead of crashing game startup.
  *
  * - DWMWA_USE_IMMERSIVE_DARK_MODE (20): dark title bar (Win10 1903+ / Win11)
  * - DWMWA_CAPTION_COLOR (35): caption background = scheme.surfaceContainer (Win11)
@@ -33,21 +36,6 @@ object WindowsCaption {
     /** Passing this color to CAPTION_COLOR/TEXT_COLOR restores the system default. */
     private const val DWMWA_COLOR_DEFAULT = -1 // 0xFFFFFFFF
 
-    // Must be public: JNA implements this interface with a dynamic proxy.
-    // StdCallLibrary already carries the stdcall function mapper, so no options map is needed.
-    interface DwmApi : StdCallLibrary {
-        fun DwmSetWindowAttribute(hwnd: Pointer, dwAttribute: Int, pvAttribute: IntByReference, cbAttribute: Int): Int
-    }
-
-    private val dwmapi: DwmApi? by lazy {
-        try {
-            Native.loadLibrary("dwmapi", DwmApi::class.java) as DwmApi
-        } catch (t: Throwable) {
-            println("[WindowsCaption] failed to load dwmapi: $t")
-            null
-        }
-    }
-
     /** ARGB -> COLORREF (0x00BBGGRR) used by DWM caption attributes. */
     private fun toColorRef(argb: Int): Int {
         val r = argb shr 16 and 0xFF
@@ -56,31 +44,21 @@ object WindowsCaption {
         return b shl 16 or (g shl 8) or r
     }
 
-    private fun getGameHwnd(): Pointer? {
-        if (!Display.isCreated()) return null
-        return try {
-            val impl = Display::class.java.getDeclaredMethod("getImplementation").apply { isAccessible = true }.invoke(null)
-            val hwnd = impl.javaClass.getDeclaredMethod("getHwnd").apply { isAccessible = true }.invoke(impl) as Long
-            Pointer(hwnd)
-        } catch (t: Throwable) {
-            println("[WindowsCaption] failed to resolve game hwnd: $t")
-            null
-        }
-    }
-
     /** Tints the game window caption with the active Material You scheme. No-op off Windows or on failure. */
     @JvmStatic
     fun apply() {
         if (!Platform.isWindows) return
-        val dwm = dwmapi ?: return
-        val hwnd = getGameHwnd() ?: return
-        val dark = if (MaterialYou.darkTheme) 1 else 0
-        val results = intArrayOf(
-            dwm.DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, IntByReference(dark), 4),
-            dwm.DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, IntByReference(toColorRef(MaterialYou.scheme.surfaceContainer)), 4),
-            dwm.DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, IntByReference(toColorRef(MaterialYou.scheme.onSurface)), 4)
-        )
-        println("[WindowsCaption] hwnd=$hwnd dark=${results[0]} caption=${results[1]} text=${results[2]}")
+        try {
+            val dark = if (MaterialYou.darkTheme) 1 else 0
+            val results = intArrayOf(
+                Dwm.setAttribute(DWMWA_USE_IMMERSIVE_DARK_MODE, dark),
+                Dwm.setAttribute(DWMWA_CAPTION_COLOR, toColorRef(MaterialYou.scheme.surfaceContainer)),
+                Dwm.setAttribute(DWMWA_TEXT_COLOR, toColorRef(MaterialYou.scheme.onSurface))
+            )
+            println("[WindowsCaption] dark=${results[0]} caption=${results[1]} text=${results[2]}")
+        } catch (t: Throwable) {
+            println("[WindowsCaption] unavailable, caption customization skipped: $t")
+        }
     }
 
     /**
@@ -90,10 +68,63 @@ object WindowsCaption {
     @JvmStatic
     fun reset() {
         if (!Platform.isWindows) return
-        val dwm = dwmapi ?: return
-        val hwnd = getGameHwnd() ?: return
-        val def = IntByReference(DWMWA_COLOR_DEFAULT)
-        dwm.DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, def, 4)
-        dwm.DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, def, 4)
+        try {
+            Dwm.resetAttribute(DWMWA_CAPTION_COLOR)
+            Dwm.resetAttribute(DWMWA_TEXT_COLOR)
+        } catch (t: Throwable) {
+            println("[WindowsCaption] reset skipped: $t")
+        }
+    }
+
+    /**
+     * The ONLY place that touches JNA. Public methods of [WindowsCaption] use
+     * plain [Int]s only, so a missing JNA jar can never break their callers.
+     */
+    private object Dwm {
+
+        // Must be public: JNA implements this interface with a dynamic proxy.
+        // StdCallLibrary already carries the stdcall function mapper, so no options map is needed.
+        interface DwmApi : com.sun.jna.win32.StdCallLibrary {
+            fun DwmSetWindowAttribute(
+                hwnd: com.sun.jna.Pointer,
+                dwAttribute: Int,
+                pvAttribute: com.sun.jna.ptr.IntByReference,
+                cbAttribute: Int
+            ): Int
+        }
+
+        private val api: DwmApi? by lazy {
+            try {
+                com.sun.jna.Native.loadLibrary("dwmapi", DwmApi::class.java) as DwmApi
+            } catch (t: Throwable) {
+                println("[WindowsCaption] failed to load dwmapi: $t")
+                null
+            }
+        }
+
+        private fun getGameHwnd(): com.sun.jna.Pointer? {
+            if (!Display.isCreated()) return null
+            return try {
+                val impl = Display::class.java.getDeclaredMethod("getImplementation").apply { isAccessible = true }.invoke(null)
+                val hwnd = impl.javaClass.getDeclaredMethod("getHwnd").apply { isAccessible = true }.invoke(impl) as Long
+                com.sun.jna.Pointer(hwnd)
+            } catch (t: Throwable) {
+                println("[WindowsCaption] failed to resolve game hwnd: $t")
+                null
+            }
+        }
+
+        /** @return the HRESULT from DWM, or -1 when the API/window is unavailable. */
+        fun setAttribute(attribute: Int, value: Int): Int {
+            val dwm = api ?: return -1
+            val hwnd = getGameHwnd() ?: return -1
+            return dwm.DwmSetWindowAttribute(hwnd, attribute, com.sun.jna.ptr.IntByReference(value), 4)
+        }
+
+        fun resetAttribute(attribute: Int) {
+            val dwm = api ?: return
+            val hwnd = getGameHwnd() ?: return
+            dwm.DwmSetWindowAttribute(hwnd, attribute, com.sun.jna.ptr.IntByReference(DWMWA_COLOR_DEFAULT), 4)
+        }
     }
 }

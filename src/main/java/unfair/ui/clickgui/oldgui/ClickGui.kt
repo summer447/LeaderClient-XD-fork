@@ -41,9 +41,8 @@ class ClickGui : GuiScreen() {
     private var smoothEntity: Timer? = null
     private var backgroundFade: Timer? = null
     private var blurSmooth: Timer? = null
-    private val clientName = "Leader"
+    private val clientName = "Leader-XD"
     private val clientVersion = Unfair.version
-    private val developer = "dev, UnfairGaming/summer123_0327"
     private var clickGuiOpen = false
     private var openedTime: Long = 0
     private var hudColorCached = Color.white.rgb
@@ -160,19 +159,19 @@ class ClickGui : GuiScreen() {
             val characterIndex = (elapsedTime / 200L).toInt()
             y += this.fontRendererObj.FONT_HEIGHT + 1
 
-            if (characterIndex < developer.length) {
+            if (characterIndex < clientName.length) {
                 var obfuscated = ""
 
-                for (i in 0..<developer.length) {
+                for (i in 0..<clientName.length) {
                     val currentChar = if (i < characterIndex)
-                        developer[i]
+                        clientName[i]
                     else ((Random()).nextInt(26) + 'a'.code).toChar()
                     obfuscated += currentChar
                 }
 
                 this.fontRendererObj.drawString(obfuscated, 4f, y.toFloat(), hudColorCached, true)
             } else {
-                this.fontRendererObj.drawString(developer, 4f, y.toFloat(), hudColorCached, true)
+                this.fontRendererObj.drawString(clientName, 4f, y.toFloat(), hudColorCached, true)
             }
         }
     }

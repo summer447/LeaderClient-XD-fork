@@ -86,7 +86,6 @@ public abstract class Module {
         return this.key;
     }
 
-    /** 是否允许绑定快捷键，个别模块（如 FreeLook）固定由自身输入触发，禁止 bind */
     public boolean isBindable() {
         return true;
     }

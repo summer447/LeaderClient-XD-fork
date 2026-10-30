@@ -1,7 +1,6 @@
 package unfair.module.modules.misc;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiDownloadTerrain;
 import net.minecraft.client.gui.inventory.GuiChest;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.item.ItemStack;
@@ -16,6 +15,7 @@ import unfair.events.PacketEvent;
 import unfair.events.PreMotionEvent;
 import unfair.events.TickEvent;
 import unfair.module.Module;
+import unfair.property.properties.BooleanProperty;
 import unfair.property.properties.ModeProperty;
 import unfair.util.ChatUtil;
 import unfair.util.PacketUtil;
@@ -29,6 +29,7 @@ import static unfair.event.EventManager.call;
 
 public class Disabler extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
+    public static final BooleanProperty customMode = new BooleanProperty("Custom Mode", false);
     public static final ModeProperty mode = new ModeProperty("Mode", 0, new String[]{"PredictionInventory"});
     private final List<Packet<?>> inventoryPackets = new ArrayList<>();
     private int forwardKeyReleaseTicks = 0;

@@ -1,6 +1,5 @@
 package unfair
 
-import com.google.gson.JsonParser
 import org.lwjgl.opengl.Display
 import unfair.command.CommandManager
 import unfair.config.Config
@@ -12,9 +11,6 @@ import unfair.property.Property
 import unfair.property.PropertyManager
 import unfair.ui.MaterialYou
 import kotlin.concurrent.thread
-import java.io.InputStreamReader
-import java.nio.charset.StandardCharsets
-import java.util.*
 
 class Unfair {
     init {
@@ -38,7 +34,7 @@ class Unfair {
         fontManager = FontManager()
         fontManager!!.load()
         for (module in moduleManager!!.modules.values) {
-            val properties = ArrayList<Property<*>?>()
+            val properties: ArrayList<Property<*>> = ArrayList<Property<*>?>() as ArrayList<Property<*>>
             for (field in module.javaClass.getDeclaredFields()) {
                 field.setAccessible(true)
                 val obj: Any?
@@ -52,7 +48,7 @@ class Unfair {
                     properties.add(obj)
                 }
             }
-            propertyManager!!.properties.put(module.javaClass, properties)
+            propertyManager!!.properties[module.javaClass] = properties
         }
         val config = Config("default", true)
         if (config.file.exists()) {
@@ -64,34 +60,18 @@ class Unfair {
         Runtime.getRuntime().addShutdownHook(Thread { config.save() })
         thread(isDaemon = true) { MaterialYou.prewarm() }
 
-        try {
-            InputStreamReader(
-                Objects.requireNonNull(Unfair::class.java.getResourceAsStream("/version.json")),
-                StandardCharsets.UTF_8
-            ).use { reader ->
-                val modInfo = JsonParser().parse(reader).getAsJsonObject()
-                version = modInfo.get("version").asString
-            }
-        } catch (_: Exception) {
-            version = "dev"
-        }
         if (Display.isCreated()) {
-            if (version == null || version == "dev") {
-                Display.setTitle("$CLIENT_NAME - $MINECRAFT_VERSION")
-            } else {
-                Display.setTitle("$CLIENT_NAME $version - $MINECRAFT_VERSION")
-            }
+            Display.setTitle("$CLIENT_NAME $version - $MINECRAFT_VERSION")
             unfair.util.WindowsCaption.apply()
         }
     }
 
     companion object {
         @JvmField
-        var clientName: String = "&l[&b&lLeader&f&l]&r "
-        var CLIENT_NAME: String = "LeaderClient"
+        var clientName: String = "&l[&b&lLeader-XD&f&l]&r "
+        var CLIENT_NAME: String = "Leader-XD"
         var MINECRAFT_VERSION: String = "1.8.9"
-        @JvmField
-        var version: String? = null
+        var version : String = "Meow"
         @JvmField
         var rotationManager: RotationManager? = null
         @JvmField
