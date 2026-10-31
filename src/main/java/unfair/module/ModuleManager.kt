@@ -3,6 +3,7 @@ package unfair.module
 import unfair.event.EventManager
 import unfair.event.EventTarget
 import unfair.event.types.EventType
+import unfair.events.KeyEvent
 import unfair.events.TickEvent
 import unfair.util.SoundUtil.playSound
 import java.io.File
@@ -145,6 +146,17 @@ class ModuleManager {
             if (this.sound) {
                 this.sound = false
                 playSound("random.click")
+            }
+        }
+    }
+
+    @EventTarget
+    fun onKey(event: KeyEvent) {
+        val key = event.key
+        if (key == 0) return
+        for (module in modules.values) {
+            if (module.getKey() == key) {
+                module.toggle()
             }
         }
     }
