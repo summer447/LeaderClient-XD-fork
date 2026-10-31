@@ -35,7 +35,6 @@ public class Stuck extends Module {
     @EventTarget
     public void onUpdate(UpdateEvent event) {
         if (this.isEnabled()) {
-            //Unfair.blinkManager.setBlinkState(true, BlinkModules.BLINK);
             fuck = true;
             mc.thePlayer.motionX = 0.0;
             mc.thePlayer.motionZ = 0.0;
@@ -73,7 +72,6 @@ public class Stuck extends Module {
     @Override
     public void onDisabled() {
         if (mc.thePlayer != null) {
-            //Unfair.blinkManager.setBlinkState(false, BlinkModules.BLINK);
             fuck = false;
             mc.thePlayer.motionX = savedMotionX;
             mc.thePlayer.motionZ = savedMotionZ;

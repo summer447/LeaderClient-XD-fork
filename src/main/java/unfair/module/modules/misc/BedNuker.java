@@ -27,6 +27,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
+import net.minecraft.util.Vec3;
 import org.lwjgl.opengl.GL11;
 import unfair.Unfair;
 import unfair.enums.ChatColors;
@@ -57,7 +58,7 @@ import java.util.concurrent.TimeUnit;
 
 public class BedNuker extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
-    public final ModeProperty mode = new ModeProperty("Mode", 0, new String[]{"Legit", "Swap"});
+    public final ModeProperty mode = new ModeProperty("Mode", 0, new String[]{"Legit", "Swap", "Hypixel"});
     public final FloatProperty range = new FloatProperty("Range", 4.5F, 3.0F, 6.0F);
     public final PercentProperty speed = new PercentProperty("Speed", 0);
     public final BooleanProperty groundSpeed = new BooleanProperty("Ground Spoof", false);
@@ -256,6 +257,9 @@ public class BedNuker extends Module {
     }
 
     private BlockPos findTargetBed(double x, double y, double z) {
+        if (this.mode.getValue() == 2) {
+            return this.findHypixelTarget(x, y, z);
+        }
         java.util.ArrayList<BlockPos> targets = new java.util.ArrayList<>();
         int sX = MathHelper.floor_double(x);
         int sY = MathHelper.floor_double(y);
@@ -297,6 +301,66 @@ public class BedNuker extends Module {
             }
             return null;
         }
+    }
+
+    /**
+     * Hypixel mode: raycast from the eyes towards every reachable bed and mine the first
+     * block the ray actually hits. While the bed is covered this is the outer block
+     * blocking it, so the bed gets peeled layer by layer until the ray finally reaches it.
+     */
+    private BlockPos findHypixelTarget(double x, double y, double z) {
+        java.util.ArrayList<BlockPos> beds = new java.util.ArrayList<>();
+        int sX = MathHelper.floor_double(x);
+        int sY = MathHelper.floor_double(y);
+        int sZ = MathHelper.floor_double(z);
+        for (int i = sX - 6; i <= sX + 6; i++) {
+            for (int j = sY - 6; j <= sY + 6; j++) {
+                for (int k = sZ - 6; k <= sZ + 6; k++) {
+                    BlockPos pos = new BlockPos(i, j, k);
+                    if (!(Boolean) this.whiteList.getValue() || !this.bedWhitelist.contains(pos)) {
+                        Block block = mc.theWorld.getBlockState(pos).getBlock();
+                        if (block instanceof BlockBed
+                                && PlayerUtil.isBlockWithinReach(pos, x, y, z, this.range.getValue().doubleValue())) {
+                            beds.add(pos);
+                        }
+                    }
+                }
+            }
+        }
+        if (beds.isEmpty()) {
+            return null;
+        }
+        beds.sort(
+                Comparator.comparingDouble(
+                        blockPos -> blockPos.distanceSqToCenter(mc.thePlayer.posX, mc.thePlayer.posY + (double) mc.thePlayer.getEyeHeight(), mc.thePlayer.posZ)
+                )
+        );
+        for (BlockPos bedPos : beds) {
+            BlockPos hitPos = this.raycastToBed(bedPos);
+            if (hitPos == null) {
+                continue;
+            }
+            Block block = mc.theWorld.getBlockState(hitPos).getBlock();
+            if (block instanceof BlockBed) {
+                return hitPos;
+            }
+            if (block.getMaterial() == Material.air
+                    || BlockUtil.isReplaceable(block)
+                    || block.getBlockHardness(mc.theWorld, hitPos) < 0.0F
+                    || !PlayerUtil.isBlockWithinReach(hitPos, x, y, z, this.range.getValue().doubleValue())
+                    || this.toolCheck.getValue() && !this.hasProperTool(block)) {
+                continue;
+            }
+            return hitPos;
+        }
+        return null;
+    }
+
+    private BlockPos raycastToBed(BlockPos bedPos) {
+        Vec3 eyePos = mc.thePlayer.getPositionEyes(1.0F);
+        Vec3 bedCenter = new Vec3((double) bedPos.getX() + 0.5, (double) bedPos.getY() + 0.25, (double) bedPos.getZ() + 0.5);
+        MovingObjectPosition mop = mc.theWorld.rayTraceBlocks(eyePos, bedCenter);
+        return mop != null && mop.typeOfHit == MovingObjectType.BLOCK ? mop.getBlockPos() : null;
     }
 
     private void doSwing() {

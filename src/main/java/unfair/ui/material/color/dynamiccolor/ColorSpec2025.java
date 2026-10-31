@@ -45,7 +45,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
   // Surfaces [S]                                               //
   ////////////////////////////////////////////////////////////////
 
-  
+
   @Override
   public DynamicColor background() {
     // Remapped to surface for 2025 spec.
@@ -55,7 +55,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor onBackground() {
     // Remapped to onSurface for 2025 spec.
@@ -69,7 +69,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor surface() {
     DynamicColor color2025 =
@@ -99,7 +99,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
     return super.surface().toBuilder().extendSpecVersion(SpecVersion.SPEC_2025, color2025).build();
   }
 
-  
+
   @Override
   public DynamicColor surfaceDim() {
     DynamicColor color2025 =
@@ -142,7 +142,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor surfaceBright() {
     DynamicColor color2025 =
@@ -185,7 +185,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor surfaceContainerLowest() {
     DynamicColor color2025 =
@@ -200,7 +200,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor surfaceContainerLow() {
     DynamicColor color2025 =
@@ -247,7 +247,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor surfaceContainer() {
     DynamicColor color2025 =
@@ -294,7 +294,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor surfaceContainerHigh() {
     DynamicColor color2025 =
@@ -341,7 +341,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor surfaceContainerHighest() {
     DynamicColor color2025 =
@@ -382,7 +382,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor onSurface() {
     DynamicColor color2025 =
@@ -434,7 +434,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor surfaceVariant() {
     // Remapped to surfaceContainerHighest for 2025 spec.
@@ -445,7 +445,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor onSurfaceVariant() {
     DynamicColor color2025 =
@@ -484,7 +484,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor inverseSurface() {
     DynamicColor color2025 =
@@ -499,7 +499,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor inverseOnSurface() {
     DynamicColor color2025 =
@@ -514,7 +514,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor outline() {
     DynamicColor color2025 =
@@ -548,7 +548,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
     return super.outline().toBuilder().extendSpecVersion(SpecVersion.SPEC_2025, color2025).build();
   }
 
-  
+
   @Override
   public DynamicColor outlineVariant() {
     DynamicColor color2025 =
@@ -584,7 +584,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor surfaceTint() {
     // Remapped to primary for 2025 spec.
@@ -598,7 +598,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
   // Primaries [P]                                              //
   ////////////////////////////////////////////////////////////////
 
-  
+
   @Override
   public DynamicColor primary() {
     DynamicColor color2025 =
@@ -664,7 +664,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
     return super.primary().toBuilder().extendSpecVersion(SpecVersion.SPEC_2025, color2025).build();
   }
 
-  
+
   @Override
   public DynamicColor primaryDim() {
     return new DynamicColor.Builder()
@@ -687,7 +687,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor onPrimary() {
     DynamicColor color2025 =
@@ -703,7 +703,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor primaryContainer() {
     DynamicColor color2025 =
@@ -754,7 +754,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor onPrimaryContainer() {
     DynamicColor color2025 =
@@ -770,7 +770,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor inversePrimary() {
     DynamicColor color2025 =
@@ -791,7 +791,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
   // Secondaries [Q]                                            //
   ////////////////////////////////////////////////////////////////
 
-  
+
   @Override
   public DynamicColor secondary() {
     DynamicColor color2025 =
@@ -833,7 +833,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor secondaryDim() {
     return new DynamicColor.Builder()
@@ -855,7 +855,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor onSecondary() {
     DynamicColor color2025 =
@@ -871,7 +871,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor secondaryContainer() {
     DynamicColor color2025 =
@@ -915,7 +915,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor onSecondaryContainer() {
     DynamicColor color2025 =
@@ -935,7 +935,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
   // Tertiaries [T]                                             //
   ////////////////////////////////////////////////////////////////
 
-  
+
   @Override
   public DynamicColor tertiary() {
     DynamicColor color2025 =
@@ -980,7 +980,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
     return super.tertiary().toBuilder().extendSpecVersion(SpecVersion.SPEC_2025, color2025).build();
   }
 
-  
+
   @Override
   public DynamicColor tertiaryDim() {
     return new DynamicColor.Builder()
@@ -1001,7 +1001,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor onTertiary() {
     DynamicColor color2025 =
@@ -1017,7 +1017,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor tertiaryContainer() {
     DynamicColor color2025 =
@@ -1074,7 +1074,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor onTertiaryContainer() {
     DynamicColor color2025 =
@@ -1094,7 +1094,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
   // Errors [E]                                                 //
   ////////////////////////////////////////////////////////////////
 
-  
+
   @Override
   public DynamicColor error() {
     DynamicColor color2025 =
@@ -1130,7 +1130,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
     return super.error().toBuilder().extendSpecVersion(SpecVersion.SPEC_2025, color2025).build();
   }
 
-  
+
   @Override
   public DynamicColor errorDim() {
     return new DynamicColor.Builder()
@@ -1144,7 +1144,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor onError() {
     DynamicColor color2025 =
@@ -1158,7 +1158,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
     return super.onError().toBuilder().extendSpecVersion(SpecVersion.SPEC_2025, color2025).build();
   }
 
-  
+
   @Override
   public DynamicColor errorContainer() {
     DynamicColor color2025 =
@@ -1195,7 +1195,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor onErrorContainer() {
     DynamicColor color2025 =
@@ -1215,7 +1215,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
   // Primary Fixed Colors [PF]                                  //
   ////////////////////////////////////////////////////////////////
 
-  
+
   @Override
   public DynamicColor primaryFixed() {
     DynamicColor color2025 =
@@ -1245,7 +1245,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor primaryFixedDim() {
     DynamicColor color2025 =
@@ -1262,7 +1262,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor onPrimaryFixed() {
     DynamicColor color2025 =
@@ -1277,7 +1277,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor onPrimaryFixedVariant() {
     DynamicColor color2025 =
@@ -1296,7 +1296,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
   // Secondary Fixed Colors [QF]                                //
   ////////////////////////////////////////////////////////////////
 
-  
+
   @Override
   public DynamicColor secondaryFixed() {
     DynamicColor color2025 =
@@ -1326,7 +1326,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor secondaryFixedDim() {
     DynamicColor color2025 =
@@ -1343,7 +1343,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor onSecondaryFixed() {
     DynamicColor color2025 =
@@ -1358,7 +1358,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor onSecondaryFixedVariant() {
     DynamicColor color2025 =
@@ -1377,7 +1377,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
   // Tertiary Fixed Colors [TF]                                 //
   ////////////////////////////////////////////////////////////////
 
-  
+
   @Override
   public DynamicColor tertiaryFixed() {
     DynamicColor color2025 =
@@ -1407,7 +1407,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor tertiaryFixedDim() {
     DynamicColor color2025 =
@@ -1424,7 +1424,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor onTertiaryFixed() {
     DynamicColor color2025 =
@@ -1439,7 +1439,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor onTertiaryFixedVariant() {
     DynamicColor color2025 =
@@ -1458,7 +1458,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
   // Android-only Colors                                          //
   //////////////////////////////////////////////////////////////////
 
-  
+
   @Override
   public DynamicColor controlActivated() {
     // Remapped to primaryContainer for 2025 spec.
@@ -1468,7 +1468,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor controlNormal() {
     // Remapped to onSurfaceVariant for 2025 spec.
@@ -1478,7 +1478,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
         .build();
   }
 
-  
+
   @Override
   public DynamicColor textPrimaryInverse() {
     // Remapped to inverseOnSurface for 2025 spec.
@@ -1561,7 +1561,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
   // Color value calculations                                    //
   /////////////////////////////////////////////////////////////////
 
-  
+
   @Override
   public Hct getHct(DynamicScheme scheme, DynamicColor color) {
     // This is crucial for aesthetics: we aren't simply the taking the standard color
@@ -1740,7 +1740,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
   // Scheme Palettes                                              //
   //////////////////////////////////////////////////////////////////
 
-  
+
   @Override
   public TonalPalette getPrimaryPalette(
       Variant variant,
@@ -1768,7 +1768,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
     }
   }
 
-  
+
   @Override
   public TonalPalette getSecondaryPalette(
       Variant variant,
@@ -1804,7 +1804,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
     }
   }
 
-  
+
   @Override
   public TonalPalette getTertiaryPalette(
       Variant variant,
@@ -1846,7 +1846,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
     }
   }
 
-  
+
   @Override
   public TonalPalette getNeutralPalette(
       Variant variant,
@@ -1872,7 +1872,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
     }
   }
 
-  
+
   @Override
   public TonalPalette getNeutralVariantPalette(
       Variant variant,
@@ -1910,7 +1910,7 @@ final class ColorSpec2025 extends ColorSpec2021 {
     }
   }
 
-  
+
   @Override
   public Optional<TonalPalette> getErrorPalette(
       Variant variant,

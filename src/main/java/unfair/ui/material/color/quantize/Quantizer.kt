@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package unfair.ui.material.color.quantize
 
-package unfair.ui.material.color.quantize;
-
-interface Quantizer {
-  public QuantizerResult quantize(int[] pixels, int maxColors);
+internal interface Quantizer {
+    fun quantize(pixels: IntArray?, maxColors: Int): QuantizerResult?
 }

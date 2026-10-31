@@ -13,48 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package unfair.ui.material.color.scheme;
+package unfair.ui.material.color.scheme
 
-import unfair.ui.material.color.dynamiccolor.ColorSpec.SpecVersion;
-import unfair.ui.material.color.dynamiccolor.ColorSpecs;
-import unfair.ui.material.color.dynamiccolor.DynamicScheme;
-import unfair.ui.material.color.dynamiccolor.Variant;
-import unfair.ui.material.color.hct.Hct;
+import unfair.ui.material.color.dynamiccolor.ColorSpec.SpecVersion
+import unfair.ui.material.color.dynamiccolor.ColorSpecs
+import unfair.ui.material.color.dynamiccolor.DynamicScheme
+import unfair.ui.material.color.dynamiccolor.Variant
+import unfair.ui.material.color.hct.Hct
 
-/** A calm theme, sedated colors that aren't particularly chromatic. */
-public class SchemeTonalSpot extends DynamicScheme {
-
-  public SchemeTonalSpot(Hct sourceColorHct, boolean isDark, double contrastLevel) {
-    this(sourceColorHct, isDark, contrastLevel, DEFAULT_SPEC_VERSION, DEFAULT_PLATFORM);
-  }
-
-  public SchemeTonalSpot(
-      Hct sourceColorHct,
-      boolean isDark,
-      double contrastLevel,
-      SpecVersion specVersion,
-      Platform platform) {
-    super(
-        sourceColorHct,
-        Variant.TONAL_SPOT,
-        isDark,
-        contrastLevel,
-        platform,
-        specVersion,
-        ColorSpecs.get(specVersion)
-            .getPrimaryPalette(Variant.TONAL_SPOT, sourceColorHct, isDark, platform, contrastLevel),
-        ColorSpecs.get(specVersion)
-            .getSecondaryPalette(
-                Variant.TONAL_SPOT, sourceColorHct, isDark, platform, contrastLevel),
-        ColorSpecs.get(specVersion)
-            .getTertiaryPalette(
-                Variant.TONAL_SPOT, sourceColorHct, isDark, platform, contrastLevel),
-        ColorSpecs.get(specVersion)
-            .getNeutralPalette(Variant.TONAL_SPOT, sourceColorHct, isDark, platform, contrastLevel),
-        ColorSpecs.get(specVersion)
-            .getNeutralVariantPalette(
-                Variant.TONAL_SPOT, sourceColorHct, isDark, platform, contrastLevel),
-        ColorSpecs.get(specVersion)
-            .getErrorPalette(Variant.TONAL_SPOT, sourceColorHct, isDark, platform, contrastLevel));
-  }
-}
+/** A calm theme, sedated colors that aren't particularly chromatic.  */
+class SchemeTonalSpot @JvmOverloads constructor(
+    sourceColorHct: Hct,
+    isDark: Boolean,
+    contrastLevel: Double,
+    specVersion: SpecVersion? = DEFAULT_SPEC_VERSION,
+    platform: Platform? = DEFAULT_PLATFORM
+) : DynamicScheme(
+    sourceColorHct,
+    Variant.TONAL_SPOT,
+    isDark,
+    contrastLevel,
+    platform,
+    specVersion,
+    ColorSpecs.get(specVersion)
+        .getPrimaryPalette(Variant.TONAL_SPOT, sourceColorHct, isDark, platform, contrastLevel),
+    ColorSpecs.get(specVersion)
+        .getSecondaryPalette(
+            Variant.TONAL_SPOT, sourceColorHct, isDark, platform, contrastLevel
+        ),
+    ColorSpecs.get(specVersion)
+        .getTertiaryPalette(
+            Variant.TONAL_SPOT, sourceColorHct, isDark, platform, contrastLevel
+        ),
+    ColorSpecs.get(specVersion)
+        .getNeutralPalette(Variant.TONAL_SPOT, sourceColorHct, isDark, platform, contrastLevel),
+    ColorSpecs.get(specVersion)
+        .getNeutralVariantPalette(
+            Variant.TONAL_SPOT, sourceColorHct, isDark, platform, contrastLevel
+        ),
+    ColorSpecs.get(specVersion)
+        .getErrorPalette(Variant.TONAL_SPOT, sourceColorHct, isDark, platform, contrastLevel)
+)

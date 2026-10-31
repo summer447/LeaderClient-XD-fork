@@ -263,7 +263,7 @@ public class KillAura extends Module {
                     AutoBlockIn autoBlockIn = (AutoBlockIn) Unfair.moduleManager.modules.get(AutoBlockIn.class);
                     if (bedNuker.isEnabled() && bedNuker.isReady()) {
                         return false;
-                    } else if (Unfair.moduleManager.modules.get(Scaffold.class).isEnabled() && Scaffold.mode.getValue() != 3) {
+                    } else if (Unfair.moduleManager.modules.get(Scaffold.class).isEnabled()) {
                         return false;
                     } else if (autoBlockIn.isEnabled()) {
                         return false;
@@ -372,7 +372,6 @@ public class KillAura extends Module {
             double widthX = box.maxX - box.minX;
             double widthZ = box.maxZ - box.minZ;
             double height = box.maxY - box.minY;
-            // Humans mostly aim at chest/head with a small spread
             double yRatio = 0.6D + this.legitRandom.nextDouble() * 0.15D;
             double xOff = (this.legitRandom.nextDouble() - 0.5D) * widthX * 0.16D;
             double zOff = (this.legitRandom.nextDouble() - 0.5D) * widthZ * 0.16D;

@@ -13,20 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package unfair.ui.material.color.quantize
 
-package unfair.ui.material.color.quantize;
+/** An interface to allow use of different color spaces by quantizers.  */
+interface PointProvider {
+    /** The four components in the color space of an sRGB color.  */
+    fun fromInt(argb: Int): DoubleArray?
 
-/** An interface to allow use of different color spaces by quantizers. */
-public interface PointProvider {
-  /** The four components in the color space of an sRGB color. */
-  public double[] fromInt(int argb);
+    /** The ARGB (i.e. hex code) representation of this color.  */
+    fun toInt(point: DoubleArray?): Int
 
-  /** The ARGB (i.e. hex code) representation of this color. */
-  public int toInt(double[] point);
-
-  /**
-   * Squared distance between two colors. Distance is defined by scientific color spaces and
-   * referred to as delta E.
-   */
-  public double distance(double[] a, double[] b);
+    /**
+     * Squared distance between two colors. Distance is defined by scientific color spaces and
+     * referred to as delta E.
+     */
+    fun distance(a: DoubleArray?, b: DoubleArray?): Double
 }

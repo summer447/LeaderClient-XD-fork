@@ -42,7 +42,6 @@ class ClickGui : GuiScreen() {
     private var backgroundFade: Timer? = null
     private var blurSmooth: Timer? = null
     private val clientName = "Leader-XD"
-    private val clientVersion = Unfair.version
     private var clickGuiOpen = false
     private var openedTime: Long = 0
     private var hudColorCached = Color.white.rgb
@@ -153,7 +152,7 @@ class ClickGui : GuiScreen() {
             val displaySize = intArrayOf(this.width, this.height)
             var y = displaySize[1] + (8 - getValueInt(0, 30, 2))
 
-            this.fontRendererObj.drawString("$clientName-$clientVersion", 4f, y.toFloat(), hudColorCached, true)
+            //this.fontRendererObj.drawString("$clientName-$clientVersion", 4f, y.toFloat(), hudColorCached, true)
 
             val elapsedTime = System.currentTimeMillis() - openedTime + 50L
             val characterIndex = (elapsedTime / 200L).toInt()

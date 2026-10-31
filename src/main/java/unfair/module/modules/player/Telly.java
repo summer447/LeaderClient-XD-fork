@@ -981,10 +981,9 @@ void disableEagleForActivation() {
     if (eagleDisabledForActivation) return;
     eagleDisabledForActivation = true;
     try {
-        if (Unfair.moduleManager == null && Scaffold.mode.getValue() != 3) return;
-        Scaffold scaffold = (Scaffold) Unfair.moduleManager.getModule(Scaffold.class);
-        if (scaffold != null && scaffold.isEnabled() && Scaffold.mode.getValue() == 3) {
-            scaffold.toggle();
+        Eagle eagle = (Eagle) Unfair.moduleManager.getModule(Eagle.class);
+        if (eagle != null && eagle.isEnabled()) {
+            eagle.toggle();
             eagleWasDisabledByTelly = true;
         }
     } catch (Throwable ignored) {}
@@ -992,10 +991,9 @@ void disableEagleForActivation() {
 
 void restoreEagleAfterTelly() {
     try {
-        if (Unfair.moduleManager == null && Scaffold.mode.getValue() != 3) return;
-        Scaffold scaffold = (Scaffold) Unfair.moduleManager.getModule(Scaffold.class);
-        if (scaffold != null && !scaffold.isEnabled() && Scaffold.mode.getValue() == 3) {
-            scaffold.toggle();
+        Eagle eagle = (Eagle) Unfair.moduleManager.getModule(Eagle.class);
+        if (eagle != null && !eagle.isEnabled()) {
+            eagle.toggle();
         }
     } catch (Throwable ignored) {}
 }

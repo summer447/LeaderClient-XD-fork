@@ -13,304 +13,293 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package unfair.ui.material.color.dynamiccolor
 
-package unfair.ui.material.color.dynamiccolor;
+import unfair.ui.material.color.hct.Hct
+import unfair.ui.material.color.palettes.TonalPalette
+import java.util.*
 
-import unfair.ui.material.color.dynamiccolor.DynamicScheme.Platform;
-import unfair.ui.material.color.hct.Hct;
-import unfair.ui.material.color.palettes.TonalPalette;
-import java.util.Optional;
+/** An interface defining all the necessary methods that could be different between specs.  */
+interface ColorSpec {
+    /** All available spec versions.  */
+    enum class SpecVersion {
+        SPEC_2021,
+        SPEC_2025,
+    }
 
-/** An interface defining all the necessary methods that could be different between specs. */
-public interface ColorSpec {
+    /**///////////////////////////////////////////////////////////// */ // Main Palettes                                              //
+    /**///////////////////////////////////////////////////////////// */
+    fun primaryPaletteKeyColor(): DynamicColor?
 
-  /** All available spec versions. */
-  public enum SpecVersion {
-    SPEC_2021,
-    SPEC_2025,
-  }
 
-  ////////////////////////////////////////////////////////////////
-  // Main Palettes                                              //
-  ////////////////////////////////////////////////////////////////
+    fun secondaryPaletteKeyColor(): DynamicColor?
 
-  
-  public DynamicColor primaryPaletteKeyColor();
 
-  
-  public DynamicColor secondaryPaletteKeyColor();
+    fun tertiaryPaletteKeyColor(): DynamicColor?
 
-  
-  public DynamicColor tertiaryPaletteKeyColor();
 
-  
-  public DynamicColor neutralPaletteKeyColor();
+    fun neutralPaletteKeyColor(): DynamicColor?
 
-  
-  public DynamicColor neutralVariantPaletteKeyColor();
 
-  
-  public DynamicColor errorPaletteKeyColor();
+    fun neutralVariantPaletteKeyColor(): DynamicColor?
 
-  ////////////////////////////////////////////////////////////////
-  // Surfaces [S]                                               //
-  ////////////////////////////////////////////////////////////////
 
-  
-  public DynamicColor background();
+    fun errorPaletteKeyColor(): DynamicColor?
 
-  
-  public DynamicColor onBackground();
+    /**///////////////////////////////////////////////////////////// */ // Surfaces [S]                                               //
+    /**///////////////////////////////////////////////////////////// */
+    fun background(): DynamicColor?
 
-  
-  public DynamicColor surface();
 
-  
-  public DynamicColor surfaceDim();
+    fun onBackground(): DynamicColor?
 
-  
-  public DynamicColor surfaceBright();
 
-  
-  public DynamicColor surfaceContainerLowest();
+    fun surface(): DynamicColor?
 
-  
-  public DynamicColor surfaceContainerLow();
 
-  
-  public DynamicColor surfaceContainer();
+    fun surfaceDim(): DynamicColor?
 
-  
-  public DynamicColor surfaceContainerHigh();
 
-  
-  public DynamicColor surfaceContainerHighest();
+    fun surfaceBright(): DynamicColor?
 
-  
-  public DynamicColor onSurface();
 
-  
-  public DynamicColor surfaceVariant();
+    fun surfaceContainerLowest(): DynamicColor?
 
-  
-  public DynamicColor onSurfaceVariant();
 
-  
-  public DynamicColor inverseSurface();
+    fun surfaceContainerLow(): DynamicColor?
 
-  
-  public DynamicColor inverseOnSurface();
 
-  
-  public DynamicColor outline();
+    fun surfaceContainer(): DynamicColor?
 
-  
-  public DynamicColor outlineVariant();
 
-  
-  public DynamicColor shadow();
+    fun surfaceContainerHigh(): DynamicColor?
 
-  
-  public DynamicColor scrim();
 
-  
-  public DynamicColor surfaceTint();
+    fun surfaceContainerHighest(): DynamicColor?
 
-  ////////////////////////////////////////////////////////////////
-  // Primaries [P]                                              //
-  ////////////////////////////////////////////////////////////////
 
-  
-  public DynamicColor primary();
+    fun onSurface(): DynamicColor?
 
-  
-  public DynamicColor primaryDim();
 
-  
-  public DynamicColor onPrimary();
+    fun surfaceVariant(): DynamicColor?
 
-  
-  public DynamicColor primaryContainer();
 
-  
-  public DynamicColor onPrimaryContainer();
+    fun onSurfaceVariant(): DynamicColor?
 
-  
-  public DynamicColor inversePrimary();
 
-  ////////////////////////////////////////////////////////////////
-  // Secondaries [Q]                                            //
-  ////////////////////////////////////////////////////////////////
+    fun inverseSurface(): DynamicColor?
 
-  
-  public DynamicColor secondary();
 
-  
-  public DynamicColor secondaryDim();
+    fun inverseOnSurface(): DynamicColor?
 
-  
-  public DynamicColor onSecondary();
 
-  
-  public DynamicColor secondaryContainer();
+    fun outline(): DynamicColor?
 
-  
-  public DynamicColor onSecondaryContainer();
 
-  ////////////////////////////////////////////////////////////////
-  // Tertiaries [T]                                             //
-  ////////////////////////////////////////////////////////////////
+    fun outlineVariant(): DynamicColor?
 
-  
-  public DynamicColor tertiary();
 
-  
-  public DynamicColor tertiaryDim();
+    fun shadow(): DynamicColor?
 
-  
-  public DynamicColor onTertiary();
 
-  
-  public DynamicColor tertiaryContainer();
+    fun scrim(): DynamicColor?
 
-  
-  public DynamicColor onTertiaryContainer();
 
-  ////////////////////////////////////////////////////////////////
-  // Errors [E]                                                 //
-  ////////////////////////////////////////////////////////////////
+    fun surfaceTint(): DynamicColor?
 
-  
-  public DynamicColor error();
+    /**///////////////////////////////////////////////////////////// */ // Primaries [P]                                              //
+    /**///////////////////////////////////////////////////////////// */
+    fun primary(): DynamicColor?
 
-  
-  public DynamicColor errorDim();
 
-  
-  public DynamicColor onError();
+    fun primaryDim(): DynamicColor?
 
-  
-  public DynamicColor errorContainer();
 
-  
-  public DynamicColor onErrorContainer();
+    fun onPrimary(): DynamicColor?
 
-  ////////////////////////////////////////////////////////////////
-  // Primary Fixed Colors [PF]                                  //
-  ////////////////////////////////////////////////////////////////
 
-  
-  public DynamicColor primaryFixed();
+    fun primaryContainer(): DynamicColor?
 
-  
-  public DynamicColor primaryFixedDim();
 
-  
-  public DynamicColor onPrimaryFixed();
+    fun onPrimaryContainer(): DynamicColor?
 
-  
-  public DynamicColor onPrimaryFixedVariant();
 
-  ////////////////////////////////////////////////////////////////
-  // Secondary Fixed Colors [QF]                                //
-  ////////////////////////////////////////////////////////////////
+    fun inversePrimary(): DynamicColor?
 
-  
-  public DynamicColor secondaryFixed();
+    /**///////////////////////////////////////////////////////////// */ // Secondaries [Q]                                            //
+    /**///////////////////////////////////////////////////////////// */
+    fun secondary(): DynamicColor?
 
-  
-  public DynamicColor secondaryFixedDim();
 
-  
-  public DynamicColor onSecondaryFixed();
+    fun secondaryDim(): DynamicColor?
 
-  
-  public DynamicColor onSecondaryFixedVariant();
 
-  ////////////////////////////////////////////////////////////////
-  // Tertiary Fixed Colors [TF]                                 //
-  ////////////////////////////////////////////////////////////////
+    fun onSecondary(): DynamicColor?
 
-  
-  public DynamicColor tertiaryFixed();
 
-  
-  public DynamicColor tertiaryFixedDim();
+    fun secondaryContainer(): DynamicColor?
 
-  
-  public DynamicColor onTertiaryFixed();
 
-  
-  public DynamicColor onTertiaryFixedVariant();
+    fun onSecondaryContainer(): DynamicColor?
 
-  //////////////////////////////////////////////////////////////////
-  // Android-only Colors                                          //
-  //////////////////////////////////////////////////////////////////
+    /**///////////////////////////////////////////////////////////// */ // Tertiaries [T]                                             //
+    /**///////////////////////////////////////////////////////////// */
+    fun tertiary(): DynamicColor?
 
-  
-  public DynamicColor controlActivated();
 
-  
-  public DynamicColor controlNormal();
+    fun tertiaryDim(): DynamicColor?
 
-  
-  public DynamicColor controlHighlight();
 
-  
-  public DynamicColor textPrimaryInverse();
+    fun onTertiary(): DynamicColor?
 
-  
-  public DynamicColor textSecondaryAndTertiaryInverse();
 
-  
-  public DynamicColor textPrimaryInverseDisableOnly();
+    fun tertiaryContainer(): DynamicColor?
 
-  
-  public DynamicColor textSecondaryAndTertiaryInverseDisabled();
 
-  
-  public DynamicColor textHintInverse();
+    fun onTertiaryContainer(): DynamicColor?
 
-  ////////////////////////////////////////////////////////////////
-  // Other                                                      //
-  ////////////////////////////////////////////////////////////////
+    /**///////////////////////////////////////////////////////////// */ // Errors [E]                                                 //
+    /**///////////////////////////////////////////////////////////// */
+    fun error(): DynamicColor?
 
-  
-  public DynamicColor highestSurface( DynamicScheme s);
 
-  /////////////////////////////////////////////////////////////////
-  // Color value calculations                                    //
-  /////////////////////////////////////////////////////////////////
+    fun errorDim(): DynamicColor?
 
-  Hct getHct(DynamicScheme scheme, DynamicColor color);
 
-  double getTone(DynamicScheme scheme, DynamicColor color);
+    fun onError(): DynamicColor?
 
-  //////////////////////////////////////////////////////////////////
-  // Scheme Palettes                                              //
-  //////////////////////////////////////////////////////////////////
 
-  
-  public TonalPalette getPrimaryPalette(
-      Variant variant, Hct sourceColorHct, boolean isDark, Platform platform, double contrastLevel);
+    fun errorContainer(): DynamicColor?
 
-  
-  public TonalPalette getSecondaryPalette(
-      Variant variant, Hct sourceColorHct, boolean isDark, Platform platform, double contrastLevel);
 
-  
-  public TonalPalette getTertiaryPalette(
-      Variant variant, Hct sourceColorHct, boolean isDark, Platform platform, double contrastLevel);
+    fun onErrorContainer(): DynamicColor?
 
-  
-  public TonalPalette getNeutralPalette(
-      Variant variant, Hct sourceColorHct, boolean isDark, Platform platform, double contrastLevel);
+    /**///////////////////////////////////////////////////////////// */ // Primary Fixed Colors [PF]                                  //
+    /**///////////////////////////////////////////////////////////// */
+    fun primaryFixed(): DynamicColor?
 
-  
-  public TonalPalette getNeutralVariantPalette(
-      Variant variant, Hct sourceColorHct, boolean isDark, Platform platform, double contrastLevel);
 
-  
-  public Optional<TonalPalette> getErrorPalette(
-      Variant variant, Hct sourceColorHct, boolean isDark, Platform platform, double contrastLevel);
+    fun primaryFixedDim(): DynamicColor?
+
+
+    fun onPrimaryFixed(): DynamicColor?
+
+
+    fun onPrimaryFixedVariant(): DynamicColor?
+
+    /**///////////////////////////////////////////////////////////// */ // Secondary Fixed Colors [QF]                                //
+    /**///////////////////////////////////////////////////////////// */
+    fun secondaryFixed(): DynamicColor?
+
+
+    fun secondaryFixedDim(): DynamicColor?
+
+
+    fun onSecondaryFixed(): DynamicColor?
+
+
+    fun onSecondaryFixedVariant(): DynamicColor?
+
+    /**///////////////////////////////////////////////////////////// */ // Tertiary Fixed Colors [TF]                                 //
+    /**///////////////////////////////////////////////////////////// */
+    fun tertiaryFixed(): DynamicColor?
+
+
+    fun tertiaryFixedDim(): DynamicColor?
+
+
+    fun onTertiaryFixed(): DynamicColor?
+
+
+    fun onTertiaryFixedVariant(): DynamicColor?
+
+    /**/////////////////////////////////////////////////////////////// */ // Android-only Colors                                          //
+    /**/////////////////////////////////////////////////////////////// */
+    fun controlActivated(): DynamicColor?
+
+
+    fun controlNormal(): DynamicColor?
+
+
+    fun controlHighlight(): DynamicColor?
+
+
+    fun textPrimaryInverse(): DynamicColor?
+
+
+    fun textSecondaryAndTertiaryInverse(): DynamicColor?
+
+
+    fun textPrimaryInverseDisableOnly(): DynamicColor?
+
+
+    fun textSecondaryAndTertiaryInverseDisabled(): DynamicColor?
+
+
+    fun textHintInverse(): DynamicColor?
+
+    /**///////////////////////////////////////////////////////////// */ // Other                                                      //
+    /**///////////////////////////////////////////////////////////// */
+    fun highestSurface(s: DynamicScheme?): DynamicColor?
+
+    /**////////////////////////////////////////////////////////////// */ // Color value calculations                                    //
+    /**////////////////////////////////////////////////////////////// */
+    fun getHct(scheme: DynamicScheme?, color: DynamicColor?): Hct?
+
+    fun getTone(scheme: DynamicScheme?, color: DynamicColor?): Double
+
+    /**/////////////////////////////////////////////////////////////// */ // Scheme Palettes                                              //
+    /**/////////////////////////////////////////////////////////////// */
+    fun getPrimaryPalette(
+        variant: Variant?,
+        sourceColorHct: Hct?,
+        isDark: Boolean,
+        platform: DynamicScheme.Platform?,
+        contrastLevel: Double
+    ): TonalPalette?
+
+
+    fun getSecondaryPalette(
+        variant: Variant?,
+        sourceColorHct: Hct?,
+        isDark: Boolean,
+        platform: DynamicScheme.Platform?,
+        contrastLevel: Double
+    ): TonalPalette?
+
+
+    fun getTertiaryPalette(
+        variant: Variant?,
+        sourceColorHct: Hct?,
+        isDark: Boolean,
+        platform: DynamicScheme.Platform?,
+        contrastLevel: Double
+    ): TonalPalette?
+
+
+    fun getNeutralPalette(
+        variant: Variant?,
+        sourceColorHct: Hct?,
+        isDark: Boolean,
+        platform: DynamicScheme.Platform?,
+        contrastLevel: Double
+    ): TonalPalette?
+
+
+    fun getNeutralVariantPalette(
+        variant: Variant?,
+        sourceColorHct: Hct?,
+        isDark: Boolean,
+        platform: DynamicScheme.Platform?,
+        contrastLevel: Double
+    ): TonalPalette?
+
+
+    fun getErrorPalette(
+        variant: Variant?,
+        sourceColorHct: Hct?,
+        isDark: Boolean,
+        platform: DynamicScheme.Platform?,
+        contrastLevel: Double
+    ): Optional<TonalPalette?>?
 }

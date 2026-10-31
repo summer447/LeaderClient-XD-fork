@@ -25,11 +25,8 @@ public class BlockHit extends Module {
         super("BlockHit",false, false);
     }
     private final ModeProperty mode = new ModeProperty("Mode",0,new String[]{"Helper","Auto","Lag"});
-    // 绕过：格挡时允许 NoSlow 生效
     public final BooleanProperty allowNoSlow = new BooleanProperty("Allow NoSlow", true);
-    // 绕过：强制第一人称格挡视觉（即使服务端状态未同步）
     public final BooleanProperty visualBlocking = new BooleanProperty("Visual Blocking", true);
-
     private final IntProperty stopTime = new IntProperty("Stop Ticks",2,1,5, () -> this.mode.getValue() == 0);
     private final ModeProperty autoMode = new ModeProperty("Auto Mode",0,new String[]{"Spam","Hold"},() -> this.mode.getValue() == 1 && this.autoBlockTime.getValue() == 0);
     private final ModeProperty autoBlockTime = new ModeProperty("AutoBlock Time",0, new String[]{"Delay","HurtTime","Sag","Smart"},() -> this.mode.getValue() == 1);
@@ -57,16 +54,12 @@ public class BlockHit extends Module {
     private int getBlockTicks = 0;
     private EntityLivingBase target;
     private TimerUtil timer = new TimerUtil();
-
-    // 模块正在驱动格挡（按下 use 键）期间为 true
     private boolean blocking;
 
-    /** 供 NoSlow / 渲染层查询：模块是否正在格挡 */
     public boolean isBlocking() {
         return this.isEnabled() && this.blocking && ItemUtil.isHoldingSword();
     }
 
-    /** 绕过：按 Ping 延长格挡保持 tick，保证服务器先收到格挡再松开，最多补偿 2 tick */
     private int getLatencyTicks() {
         try {
             int ping = mc.getNetHandler().getPlayerInfo(mc.thePlayer.getUniqueID()).getResponseTime();

@@ -13,16 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package unfair.ui.material.color.quantize
 
-package unfair.ui.material.color.quantize;
-
-import java.util.Map;
-
-/** Represents result of a quantizer run */
-public final class QuantizerResult {
-  public final Map<Integer, Integer> colorToCount;
-
-  QuantizerResult(Map<Integer, Integer> colorToCount) {
-    this.colorToCount = colorToCount;
-  }
-}
+/** Represents result of a quantizer run  */
+class QuantizerResult internal constructor(@JvmField val colorToCount: MutableMap<Int?, Int?>?)

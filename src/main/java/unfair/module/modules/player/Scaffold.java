@@ -12,8 +12,6 @@ import net.minecraft.potion.Potion;
 import net.minecraft.util.*;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.WorldSettings.GameType;
-import org.apache.commons.lang3.RandomUtils;
-import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 import unfair.Unfair;
 import unfair.event.EventTarget;
@@ -42,28 +40,22 @@ public class Scaffold extends Module {
             0.53125, 0.59375, 0.65625, 0.71875, 0.78125, 0.84375, 0.90625, 0.96875
     };
 
-    public static final ModeProperty mode = new ModeProperty("Mode", 1, new String[]{"Normal", "Telly", "Snap", "Legit", "Extra", "GodBridge", "Breezily", "Vulcan GodBridge"});
-    public final ModeProperty rotationMode = new ModeProperty("Rotate Mode", 3, new String[]{"None", "Vanilla", "Backwards", "Prediction"}, () -> mode.getValue() != 3);
-    public final ModeProperty towerMode = new ModeProperty("Tower Mode", 0, new String[]{"None", "Vanilla", "Motion", "Jump", "Extra", "Vulcan", "Karhu", "JumpExtra", "Hypixel"}, () -> mode.getValue() != 3);
-    public final ModeProperty rotationExtraMode = new ModeProperty("Rotate Extra Mode", 1, new String[]{"Telly", "Extra"}, () -> mode.getValue() == 4);
-    public final ModeProperty moveFix = new ModeProperty("Move Fix", 1, new String[]{"None", "Silent"}, () -> mode.getValue() != 3);
+    public static final ModeProperty mode = new ModeProperty("Mode", 1, new String[]{"Normal", "Telly", "Snap", "Extra", "GodBridge", "Breezily", "Vulcan GodBridge"});
+    public final ModeProperty rotationMode = new ModeProperty("Rotate Mode", 3, new String[]{"None", "Vanilla", "Backwards", "Prediction"});
+    public final ModeProperty towerMode = new ModeProperty("Tower Mode", 0, new String[]{"None", "Vanilla", "Motion", "Jump", "Extra", "Vulcan", "Karhu", "JumpExtra", "Old Hypixel"});
+    public final ModeProperty rotationExtraMode = new ModeProperty("Rotate Extra Mode", 1, new String[]{"Telly", "Extra"}, () -> mode.getValue() == 3);
+    public final ModeProperty moveFix = new ModeProperty("Move Fix", 1, new String[]{"None", "Silent"});
     public final IntProperty jumpDelay = new IntProperty("Jump Delay", 2, 0, 20, () -> mode.getValue() == 1);
-    public final IntProperty placeDelay = new IntProperty("Place Delay", 1, 0, 5, () -> mode.getValue() != 3);
-    public final IntProperty bridgeDelay = new IntProperty("Bridge Delay", 10, 0, 40, () -> mode.getValue() == 7);
-    public final FloatProperty startRotSpeed = new FloatProperty("Start Rotate Speed", 180.0F, 40.0F, 180.0F, () -> mode.getValue() != 3 || rotationExtraMode.getValue() != 1);
-    public final FloatProperty normalRotSpeed = new FloatProperty("Normal Rotate Speed", 180.0F, 40.0F, 180.0F, () -> mode.getValue() != 3 || rotationExtraMode.getValue() != 1);
-    public final BooleanProperty swing = new BooleanProperty("Swing", true, () -> mode.getValue() != 3);
-    public final BooleanProperty itemSpoof = new BooleanProperty("Item Spoof", false, () -> mode.getValue() != 3);
-    public final BooleanProperty clutch = new BooleanProperty("Clutch", true, () -> mode.getValue() != 3 && mode.getValue() != 4);
-    public final BooleanProperty onlyInVoid = new BooleanProperty("Only Void", false, () -> mode.getValue() != 3 && this.clutch.getValue() && mode.getValue() != 4);
+    public final IntProperty placeDelay = new IntProperty("Place Delay", 1, 0, 5);
+    public final IntProperty bridgeDelay = new IntProperty("Bridge Delay", 10, 0, 40, () -> mode.getValue() == 6);
+    public final FloatProperty startRotSpeed = new FloatProperty("Start Rotate Speed", 180.0F, 40.0F, 180.0F);
+    public final FloatProperty normalRotSpeed = new FloatProperty("Normal Rotate Speed", 180.0F, 40.0F, 180.0F);
+    public final BooleanProperty swing = new BooleanProperty("Swing", true);
+    public final BooleanProperty itemSpoof = new BooleanProperty("Item Spoof", false);
+    public final BooleanProperty clutch = new BooleanProperty("Clutch", true, () -> mode.getValue() != 3);
+    public final BooleanProperty onlyInVoid = new BooleanProperty("Only Void", false, () -> this.clutch.getValue() && mode.getValue() != 3);
     public final IntProperty forwardTicks = new IntProperty("Forward Ticks", 5, 1, 20, () -> mode.getValue() == 2);
     public final IntProperty backTicks = new IntProperty("Back Ticks", 5, 1, 20, () -> mode.getValue() == 2);
-    public final IntProperty eagleMinDelay = new IntProperty("Eagle Min Delay", 2, 0, 10, () -> mode.getValue() == 3);
-    public final IntProperty eagleMaxDelay = new IntProperty("Eagle Max Delay", 3, 0, 10, () -> mode.getValue() == 3);
-    public final BooleanProperty eagleDirCheck = new BooleanProperty("Eagle Dir Check", true, () -> mode.getValue() == 3);
-    public final BooleanProperty eaglePitchCheck = new BooleanProperty("Eagle Pitch Check", true, () -> mode.getValue() == 3);
-    public final BooleanProperty eagleBlocksOnly = new BooleanProperty("Eagle Blocks Only", true, () -> mode.getValue() == 3);
-    public final BooleanProperty eagleSneakOnly = new BooleanProperty("Eagle Sneaking Only", false, () -> mode.getValue() == 3);
 
     private int rotationTick = 0;
     private int lastSlot = -1;
@@ -90,11 +82,8 @@ public class Scaffold extends Module {
     private boolean sa;
     private int snapTickCounter = 0;
     private boolean snapForward = true;
-    private int eagleSneakDelay = 0;
-    // Extra Mode
     private int extraTowerTick = 0;
     private int extraTowerDelay = 0;
-    // LiquidBounce bypass techniques
     private boolean godbridgeSide = false;
     private float breezilySideways = 0.0F;
     private double breezilyEdge = 0.475D;
@@ -105,8 +94,6 @@ public class Scaffold extends Module {
 
     public Scaffold() {
         super("Scaffold", false);
-        this.eagleMinDelay.setOwner(this);
-        this.eagleMaxDelay.setOwner(this);
     }
 
     @Override
@@ -115,10 +102,7 @@ public class Scaffold extends Module {
     }
 
     private boolean shouldStopSprint() {
-        if (this.mode.getValue() == 3) {
-            return false;
-        }
-        if (this.mode.getValue() == 5 || this.mode.getValue() == 6 || this.mode.getValue() == 7) {
+        if (this.mode.getValue() == 4 || this.mode.getValue() == 5 || this.mode.getValue() == 6) {
             return false;
         }
         if (this.isTowering()) {
@@ -216,11 +200,8 @@ public class Scaffold extends Module {
         }
     }
 
-    /**
-     * LiquidBounce bypass 独立流程：计算 LB 风格旋转并放置方块。
-     */
     private void handleBypass(UpdateEvent event, boolean tower) {
-        boolean godbridge = this.mode.getValue() == 5 || this.mode.getValue() == 7;
+        boolean godbridge = this.mode.getValue() == 4 || this.mode.getValue() == 6;
         float[] rotations = this.bypassRotations(godbridge, tower, event);
         this.yaw = rotations[0];
         this.pitch = rotations[1];
@@ -247,10 +228,6 @@ public class Scaffold extends Module {
         }
     }
 
-    /**
-     * 按 LiquidBounce GodBridge / Breezily 公式计算朝向。
-     * 返回 [yaw, pitch]。
-     */
     private float[] bypassRotations(boolean godbridge, boolean tower, UpdateEvent event) {
         if (tower) {
             float backwards = MathHelper.wrapAngleTo180_float(this.getCurrentYaw() + 180.0F);
@@ -258,7 +235,6 @@ public class Scaffold extends Module {
         }
 
         if (!MoveUtil.isForwardPressed()) {
-            // 无移动输入：基于当前朝向锁定到 +45°
             float base = this.yaw != -180.0F ? this.yaw : event.getYaw();
             float noInputYaw = (float) (Math.floor(base / 90.0D) * 90.0D + 45.0D);
             return new float[]{noInputYaw, 75.0F};
@@ -293,16 +269,12 @@ public class Scaffold extends Module {
             return new float[]{movingYaw, 75.6F};
         }
 
-        // Breezily
         if (straight) {
             return new float[]{movingYaw, 80.0F};
         }
         return new float[]{movingYaw, 75.6F};
     }
 
-    /**
-     * 在支撑方块的目标面上寻找最接近当前 yaw/pitch 的可放置点击点。
-     */
     private Vec3 findBypassHitVec(BlockData blockData) {
         float reach = mc.playerController.getBlockReachDistance();
 
@@ -362,9 +334,6 @@ public class Scaffold extends Module {
         return bestHitVec;
     }
 
-    /**
-     * 脚下正下方是否有实体方块（用于 Tower 运动判定）。
-     */
     private boolean isBlockBeneath() {
         BlockPos below = new BlockPos(
                 MathHelper.floor_double(mc.thePlayer.posX),
@@ -374,10 +343,6 @@ public class Scaffold extends Module {
         return !BlockUtil.isReplaceable(below);
     }
 
-    /**
-     * LiquidBounce Breezily：前进且未潜行时，依据玩家在方块上的边缘位置
-     * 计算左右侧移方向，并在换边时刷新边缘随机距离。
-     */
     private void updateBreezilyInput() {
         if (mc.thePlayer.movementInput.moveForward <= 0.0F || mc.thePlayer.isSneaking()) {
             return;
@@ -420,7 +385,6 @@ public class Scaffold extends Module {
                 break;
         }
 
-        // sideways: +1 = 右, -1 = 左；vanilla moveStrafe 左为 +1，故取反
         if (sideways != this.breezilySideways && sideways != 0.0F) {
             this.breezilySideways = sideways;
             this.breezilyEdge = RandomUtil.nextDouble(0.45D, 0.5D);
@@ -445,8 +409,7 @@ public class Scaffold extends Module {
         if (!MoveUtil.isForwardPressed()) return false;
         if (PlayerUtil.isAirAbove()) return false;
         if (mc.thePlayer.onGround) {
-            // Extra Mode
-            if (this.mode.getValue() == 4) {
+            if (this.mode.getValue() == 3) {
                 return this.stage > 0 || (this.towerMode.getValue() == 4 && mc.gameSettings.keyBindJump.isKeyDown());
             }
             if (this.stage > 0 || mc.gameSettings.keyBindJump.isKeyDown()) return true;
@@ -456,41 +419,6 @@ public class Scaffold extends Module {
 
     public int getSlot() {
         return this.lastSlot;
-    }
-
-    private boolean eagleCanMoveSafely() {
-        double[] offset = MoveUtil.predictMovement();
-        return PlayerUtil.canMove(mc.thePlayer.motionX + offset[0], mc.thePlayer.motionZ + offset[1]);
-    }
-
-    private boolean eagleShouldSneak() {
-        if (this.eagleDirCheck.getValue() && mc.gameSettings.keyBindForward.isKeyDown()) {
-            return false;
-        } else if (this.eaglePitchCheck.getValue() && mc.thePlayer.rotationPitch < 69.0F) {
-            return false;
-        } else if (this.eagleSneakOnly.getValue() && !Keyboard.isKeyDown(mc.gameSettings.keyBindSneak.getKeyCode())) {
-            return false;
-        } else {
-            return (!this.eagleBlocksOnly.getValue() || ItemUtil.isHoldingBlock()) && mc.thePlayer.onGround;
-        }
-    }
-
-    @Override
-    public void verifyValue(String name) {
-        if (name == null) return;
-        String formattedName = name.toLowerCase().replace(" ", "-");
-        switch (formattedName) {
-            case "eagle-min-delay":
-                if (this.eagleMinDelay.getValue() > this.eagleMaxDelay.getValue()) {
-                    this.eagleMaxDelay.setValue(this.eagleMinDelay.getValue());
-                }
-                break;
-            case "eagle-max-delay":
-                if (this.eagleMinDelay.getValue() > this.eagleMaxDelay.getValue()) {
-                    this.eagleMinDelay.setValue(this.eagleMaxDelay.getValue());
-                }
-                break;
-        }
     }
 
     private void updateClutch() {
@@ -600,7 +528,6 @@ public class Scaffold extends Module {
         return false;
     }
 
-    // Extra Mode
     private EnumFacing yawToFacing(float yaw) {
         if (yaw < -135.0F || yaw > 135.0F) {
             return EnumFacing.NORTH;
@@ -631,16 +558,6 @@ public class Scaffold extends Module {
     @EventTarget(Priority.HIGH)
     public void onUpdate(UpdateEvent event) {
         if (this.isEnabled() && event.getType() == EventType.PRE) {
-            if (this.mode.getValue() == 3) {
-                this.lastSlot = mc.thePlayer.inventory.currentItem;
-                if (this.eagleSneakDelay > 0) {
-                    this.eagleSneakDelay--;
-                }
-                if (this.eagleSneakDelay == 0 && this.eagleCanMoveSafely()) {
-                    this.eagleSneakDelay = RandomUtils.nextInt(this.eagleMinDelay.getValue(), this.eagleMaxDelay.getValue() + 1);
-                }
-                return;
-            }
             boolean tellyMode = this.mode.getValue() == 1;
             if (this.rotationTick > 0) {
                 this.rotationTick--;
@@ -670,8 +587,7 @@ public class Scaffold extends Module {
             if (tellyMode && mc.thePlayer.onGround && MoveUtil.isForwardPressed() && !mc.gameSettings.keyBindJump.isKeyDown() && this.stage == 0) {
                 this.stage = 1;
             }
-            // Extra Mode
-            if (this.mode.getValue() == 4 && mc.thePlayer.onGround && this.stage == 0 && !mc.gameSettings.keyBindJump.isKeyDown()) {
+            if (this.mode.getValue() == 3 && mc.thePlayer.onGround && this.stage == 0 && !mc.gameSettings.keyBindJump.isKeyDown()) {
                 this.stage = 1;
             }
             if (tellyMode) {
@@ -720,8 +636,7 @@ public class Scaffold extends Module {
                         }
                     }
                 }
-                // LiquidBounce bypass: 新技术或新 Tower 按住跳跃时走独立流程
-                boolean bypassTechnique = this.mode.getValue() == 5 || this.mode.getValue() == 6 || this.mode.getValue() == 7;
+                boolean bypassTechnique = this.mode.getValue() == 4 || this.mode.getValue() == 5 || this.mode.getValue() == 6;
                 boolean bypassTower = this.towerMode.getValue() >= 5 && mc.gameSettings.keyBindJump.isKeyDown();
                 if (bypassTechnique || bypassTower) {
                     this.handleBypass(event, bypassTower);
@@ -890,15 +805,13 @@ public class Scaffold extends Module {
                         this.yaw = RotationUtil.quantizeAngle(yawDiffTo180);
                     }
                 }
-                // Extra Mode
-                if (this.mode.getValue() == 4 && this.isTowering()) {
+                if (this.mode.getValue() == 3 && this.isTowering()) {
                     this.towering = true;
                 }
-                if (this.rotationMode.getValue() != 0 && this.mode.getValue() != 2 && this.mode.getValue() != 3) {
+                if (this.rotationMode.getValue() != 0 && this.mode.getValue() != 2) {
                     float targetYaw = this.yaw;
                     float targetPitch = this.pitch;
-                    // Extra Mode
-                    if (this.mode.getValue() == 4 && this.isTowering()) {
+                    if (this.mode.getValue() == 3 && this.isTowering()) {
                         if (this.rotationExtraMode.getValue() != 1) {
                             float yawDelta = MathHelper.wrapAngleTo180_float(mc.thePlayer.rotationYaw - event.getYaw());
                             targetYaw = RotationUtil.quantizeAngle(event.getYaw() + yawDelta * RandomUtil.nextFloat(0.98F, 0.99F));
@@ -971,8 +884,7 @@ public class Scaffold extends Module {
                         this.place(belowPlayer, this.targetFacing, hitVec);
                     }
                     this.targetFacing = null;
-                } else if (this.mode.getValue() == 4 && this.stage > 0 && !mc.thePlayer.onGround) {
-                    // KeepY Extra
+                } else if (this.mode.getValue() == 3 && this.stage > 0 && !mc.thePlayer.onGround) {
                     int nextBlockY = MathHelper.floor_double(mc.thePlayer.posY + mc.thePlayer.motionY);
                     if (nextBlockY <= this.startY && mc.thePlayer.posY > (double) (this.startY + 1)) {
                         this.shouldKeepY = true;
@@ -987,18 +899,13 @@ public class Scaffold extends Module {
         }
     }
 
-    /**
-     * LiquidBounce bypass Tower 的逐 tick 运动控制。
-     * Pulldown / Karhu / Vulcan / Hypixel。
-     */
     @EventTarget
     public void onBypassTowerTick(TickEvent event) {
         if (!this.isEnabled() || event.getType() != EventType.PRE) {
             return;
         }
         boolean jumpHeld = mc.gameSettings.keyBindJump.isKeyDown();
-        // Vulcan GodBridge：自动跳跃（未按跳跃键）时复用 Tower "Vulcan" 的跳跃方式
-        boolean vulcanAutoJump = this.mode.getValue() == 7 && !jumpHeld;
+        boolean vulcanAutoJump = this.mode.getValue() == 6 && !jumpHeld;
         int tower = vulcanAutoJump ? 5 : this.towerMode.getValue();
         if (tower < 5) {
             return;
@@ -1017,26 +924,26 @@ public class Scaffold extends Module {
         }
 
         switch (tower) {
-            case 5: // Pulldown：上升衰减到 0.1 后强制下拉
+            case 5:
                 if (!this.towerPulled && mc.thePlayer.motionY < 0.1D) {
                     mc.thePlayer.motionY = -1.0D;
                     this.towerPulled = true;
                 }
                 break;
-            case 6: // Karhu：timer 不可用，仅保留 pulldown（触发 0.06）
+            case 6:
                 if (!this.towerPulled && mc.thePlayer.motionY < 0.06D) {
                     mc.thePlayer.motionY -= 1.0D;
                     this.towerPulled = true;
                 }
                 break;
-            case 7: // Vulcan：奇偶 tick 交替垂直速度
+            case 7:
                 if (this.towerAirTicks % 2 == 0) {
                     mc.thePlayer.motionY = 0.7D;
                 } else {
                     mc.thePlayer.motionY = MoveUtil.isForwardPressed() ? 0.42D : 0.6D;
                 }
                 break;
-            case 8: // Hypixel：超过 14 air-tick 减速，否则按 %3 节奏
+            case 8:
                 if (this.towerAirTicks > 14) {
                     mc.thePlayer.motionY -= 0.09D;
                     mc.thePlayer.motionX *= 0.6D;
@@ -1071,10 +978,9 @@ public class Scaffold extends Module {
                 event.setStrafe(0.0F);
                 return;
             }
-            if (this.mode.getValue() == 2 || this.mode.getValue() == 3) return;
+            if (this.mode.getValue() == 2) return;
             boolean towerCondition = !mc.thePlayer.isCollidedHorizontally && mc.thePlayer.hurtTime <= 5 && !mc.thePlayer.isPotionActive(Potion.jump) && mc.gameSettings.keyBindJump.isKeyDown() && ItemUtil.isHoldingBlock();
             if (towerCondition) {
-                // Tower Extra
                 if (this.towerMode.getValue() == 4) {
                     this.handleExtraTower(event);
                     return;
@@ -1083,7 +989,6 @@ public class Scaffold extends Module {
                     this.handleTower(event);
                 }
             } else if (this.towerMode.getValue() == 4) {
-                // Extra Tower
                 this.extraTowerTick = 0;
                 this.extraTowerDelay = 0;
             }
@@ -1123,8 +1028,6 @@ public class Scaffold extends Module {
                 break;
         }
     }
-
-    // Extra Mode Tower
     private void handleExtraTower(StrafeEvent event) {
         int yState = (int) (mc.thePlayer.posY % 1.0 * 100.0);
         switch (this.extraTowerTick) {
@@ -1220,40 +1123,20 @@ public class Scaffold extends Module {
                 mc.thePlayer.movementInput.sneak = false;
                 return;
             }
-            if (this.mode.getValue() == 3) {
-                if (mc.currentScreen == null) {
-                    if (this.eagleSneakOnly.getValue() && Keyboard.isKeyDown(mc.gameSettings.keyBindSneak.getKeyCode()) && this.eagleShouldSneak()) {
-                        mc.thePlayer.movementInput.sneak = false;
-                        mc.thePlayer.movementInput.moveForward /= 0.3F;
-                        mc.thePlayer.movementInput.moveStrafe /= 0.3F;
-                    }
-                    if (!mc.thePlayer.movementInput.sneak) {
-                        if (this.eagleShouldSneak() && (this.eagleSneakDelay > 0 || this.eagleCanMoveSafely())) {
-                            mc.thePlayer.movementInput.sneak = true;
-                            mc.thePlayer.movementInput.moveStrafe *= 0.3F;
-                            mc.thePlayer.movementInput.moveForward *= 0.3F;
-                        }
-                    }
-                }
-                return;
-            }
-            // GodBridge/Vulcan GodBridge：地面上按住前进、走到边缘时自动起跳（保持冲刺跳跃节奏）
-            if ((this.mode.getValue() == 5 || this.mode.getValue() == 7)
+            if ((this.mode.getValue() == 4 || this.mode.getValue() == 6)
                     && mc.thePlayer.onGround
                     && MoveUtil.isForwardPressed()
                     && !mc.gameSettings.keyBindJump.isKeyDown()
                     && this.isOnEdge()) {
-                // Vulcan GodBridge：落地后先多搭一段路，达到 Bridge Delay 后再自动起跳
-                if (this.mode.getValue() != 7 || this.bridgeGroundTicks >= this.bridgeDelay.getValue()) {
+                if (this.mode.getValue() != 6 || this.bridgeGroundTicks >= this.bridgeDelay.getValue()) {
                     mc.thePlayer.movementInput.jump = true;
                     this.bridgeGroundTicks = 0;
                 }
             }
-            if (this.mode.getValue() == 7 && mc.thePlayer.onGround) {
+            if (this.mode.getValue() == 6 && mc.thePlayer.onGround) {
                 this.bridgeGroundTicks++;
             }
-            // Breezily：前进时根据脚下边缘位置交替左右侧移
-            if (this.mode.getValue() == 6) {
+            if (this.mode.getValue() == 5) {
                 this.updateBreezilyInput();
             }
             if (this.moveFix.getValue() == 1 && RotationState.isActived() && RotationState.getPriority() == 3.0F && MoveUtil.isForwardPressed()) {
@@ -1262,8 +1145,7 @@ public class Scaffold extends Module {
             if (this.mode.getValue() == 1 && mc.thePlayer.onGround && this.stage > 0 && MoveUtil.isForwardPressed() && this.tellyJumpDelayTimer <= 0) {
                 mc.thePlayer.movementInput.jump = true;
             }
-            // Extra Mode
-            if (this.mode.getValue() == 4 && mc.thePlayer.onGround && this.stage > 0 && MoveUtil.isForwardPressed() && this.tellyJumpDelayTimer <= 0) {
+            if (this.mode.getValue() == 3 && mc.thePlayer.onGround && this.stage > 0 && MoveUtil.isForwardPressed() && this.tellyJumpDelayTimer <= 0) {
                 mc.thePlayer.movementInput.jump = true;
             }
         }
@@ -1323,28 +1205,28 @@ public class Scaffold extends Module {
 
     @EventTarget
     public void onLeftClick(LeftClickMouseEvent event) {
-        if (this.isEnabled() && this.mode.getValue() != 3) {
+        if (this.isEnabled()) {
             event.setCancelled(true);
         }
     }
 
     @EventTarget
     public void onRightClick(RightClickMouseEvent event) {
-        if (this.isEnabled() && this.mode.getValue() != 3) {
+        if (this.isEnabled()) {
             event.setCancelled(true);
         }
     }
 
     @EventTarget
     public void onHitBlock(HitBlockEvent event) {
-        if (this.isEnabled() && this.mode.getValue() != 3) {
+        if (this.isEnabled()) {
             event.setCancelled(true);
         }
     }
 
     @EventTarget
     public void onSwap(SwapItemEvent event) {
-        if (this.isEnabled() && this.mode.getValue() != 3) {
+        if (this.isEnabled()) {
             this.lastSlot = event.setSlot(this.lastSlot);
             event.setCancelled(true);
         }
@@ -1368,11 +1250,8 @@ public class Scaffold extends Module {
         this.placeDelayCounter = 0;
         this.snapTickCounter = 0;
         this.snapForward = true;
-        this.eagleSneakDelay = 0;
-        // Extra Mode
         this.extraTowerTick = 0;
         this.extraTowerDelay = 0;
-        // LiquidBounce bypass techniques
         this.godbridgeSide = false;
         this.breezilySideways = 0.0F;
         this.breezilyEdge = 0.475D;
@@ -1389,9 +1268,7 @@ public class Scaffold extends Module {
             mc.thePlayer.inventory.currentItem = this.lastSlot;
         }
         this.snapTickCounter = 0;
-        this.eagleSneakDelay = 0;
         this.bridgeGroundTicks = 0;
-        // Extra Mode
         this.extraTowerTick = 0;
         this.extraTowerDelay = 0;
     }

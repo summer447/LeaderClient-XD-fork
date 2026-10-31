@@ -58,7 +58,7 @@ class GuiMainMenuClient : GuiMainMenu() {
         for (button in this.buttonList) {
             button.drawButton(this.mc, mouseX, mouseY)
         }
-        this.fontRendererObj.drawString("Minecraft 1.8.9 LeaderClient Meow!!", 2, this.height - 10, MaterialYou.scheme.onSurface)
+        this.fontRendererObj.drawString("Minecraft 1.8.9 Leader-XD Meow!!", 2, this.height - 10, MaterialYou.scheme.onSurface)
         this.fontRendererObj.drawString(
             "Copyright Mojang AB. Do not distribute!",
             this.width - this.fontRendererObj.getStringWidth("Copyright Mojang AB. Do not distribute!") - 2,
