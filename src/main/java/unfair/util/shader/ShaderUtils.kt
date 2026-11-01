@@ -88,6 +88,7 @@ class ShaderUtils @JvmOverloads constructor(
             "uniform vec2 location, rectSize;\n" +
             "uniform sampler2D textureIn;\n" +
             "uniform float radius, alpha;\n" +
+            "uniform vec2 uvOffset, uvSize;\n" +
             "\n" +
             "float roundedBoxSDF(vec2 centerPos, vec2 size, float radius) {\n" +
             "    return length(max(abs(centerPos) -size, 0.)) - radius;\n" +
@@ -95,7 +96,8 @@ class ShaderUtils @JvmOverloads constructor(
             "\n" +
             "\n" +
             "void main() {\n" +
-            "    float distance = roundedBoxSDF((rectSize * .5) - (gl_TexCoord[0].st * rectSize), (rectSize * .5) - radius - 1., radius);\n" +
+            "    vec2 pos = (gl_TexCoord[0].st - uvOffset) / uvSize;\n" +
+            "    float distance = roundedBoxSDF((rectSize * .5) - (pos * rectSize), (rectSize * .5) - radius - 1., radius);\n" +
             "    float smoothedAlpha =  (1.0-smoothstep(0.0, 2.0, distance)) * alpha;\n" +
             "    gl_FragColor = vec4(texture2D(textureIn, gl_TexCoord[0].st).rgb, smoothedAlpha);\n" +
             "}"

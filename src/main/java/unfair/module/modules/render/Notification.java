@@ -25,8 +25,8 @@ public class Notification extends Module {
     public static final CopyOnWriteArrayList<NotificationTask> tasks = new CopyOnWriteArrayList<>();
     public static final CopyOnWriteArrayList<NotificationTask> disTasks = new CopyOnWriteArrayList<>();
 
-    private float lerp(float current, float target,float speed) {
-        return current + (target - current) * speed;
+    private float lerp(float current, float target) {
+        return current + (target - current) * (float) 0.18;
     }
     public static void post(String name) {
         tasks.add(new NotificationTask(name, showTime.getValue()));
@@ -40,8 +40,6 @@ public class Notification extends Module {
         ScaledResolution sr = new ScaledResolution(mc);
         float x = sr.getScaledWidth() - rectLeft.getValue();
         float y = sr.getScaledHeight() - rectTop.getValue();
-
-        // merge enable/disable notifications into one time-ordered stack
         List<NotificationTask> merged = new ArrayList<>(tasks);
         merged.addAll(disTasks);
         merged.sort(Comparator.comparingLong(NotificationTask::getStart));
@@ -68,26 +66,19 @@ public class Notification extends Module {
                 float cardWidth = Math.max(textWidth + PADDING * 2 + 28, 120);
                 task.targetX = x - cardWidth;
             }
-
-            task.animationX = lerp(task.animationX, task.targetX, 0.18f);
-
+            task.animationX = lerp(task.animationX, task.targetX);
             float renderX = task.animationX;
             float width = x - renderX;
             float progress = task.getProgress();
             float progressWidth = Math.max(0, (width - 8) * (1.0f - progress));
             Color progressColor = new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), 170);
-            // soft shadow + dark rounded card
             RenderUtil.drawRoundedRectangle(renderX - 1, y - 1, x + 1, y + HEIGHT + 1, 6.0f, new Color(0, 0, 0, 60).getRGB());
             RenderUtil.drawRoundedRectangle(renderX, y, x, y + HEIGHT, 6.0f, new Color(22, 22, 28, 215).getRGB());
-            // subtle top highlight for depth
             RenderUtil.drawRoundedRectangle(renderX + 2, y, x - 2, y + 1, 1.0f, new Color(255, 255, 255, 20).getRGB());
-            // title
             RenderUtil.scaleStart(renderX + PADDING, y + 6, 0.75f);
             RenderUtil.drawFont(TITLE, (int) (renderX + PADDING), (int) (y + 6), accentColor.getRGB(), false);
             RenderUtil.scaleEnd();
-            // message
             RenderUtil.drawFont(task.message, (int) (renderX + PADDING), (int) (y + 17), -1, true);
-            // rounded progress bar
             RenderUtil.drawRoundedRectangle(renderX + 3, y + HEIGHT - 3, renderX + 3 + progressWidth, y + HEIGHT - 1.5f, 1.0f, progressColor.getRGB());
             y -= (HEIGHT + space.getValue());
         }

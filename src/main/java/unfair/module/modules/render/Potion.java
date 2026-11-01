@@ -13,10 +13,7 @@ import unfair.Unfair;
 import unfair.event.EventTarget;
 import unfair.events.Render2DEvent;
 import unfair.module.Module;
-import unfair.property.properties.FloatProperty;
-import unfair.property.properties.IntProperty;
-import unfair.property.properties.ModeProperty;
-import unfair.property.properties.PercentProperty;
+import unfair.property.properties.*;
 import unfair.util.RenderUtil;
 
 import java.awt.*;
@@ -51,7 +48,6 @@ public class Potion extends Module {
     private List<PotionEffect> currentEffects = new java.util.ArrayList<>();
     private long lastFrameTime = System.currentTimeMillis();
 
-    // 拖拽状态
     private boolean dragging = false;
     private boolean prevMouseDown = false;
     private float dragOffsetX = 0.0F;
@@ -137,7 +133,6 @@ public class Potion extends Module {
         return Math.max(RenderUtil.getWidth(name), RenderUtil.getWidth(duration));
     }
 
-    // 计算当前模式下药水区域的总宽度和高度（不缩放）
     private float[] calculateAreaSize(List<PotionEffect> renderList, int modeVal) {
         float totalWidth = 0;
         float totalHeight = 0;
@@ -160,7 +155,7 @@ public class Potion extends Module {
                 AnimData anim = animationMap.get(effect.getPotionID());
                 if (anim != null) totalHeight += rowHeight * anim.progress;
             }
-        } else if (modeVal == 1) { // GlowCircle
+        } else if (modeVal == 1) {
             int offsetX = 21;
             int maxString = 0;
             for (PotionEffect effect : renderList) {
@@ -177,7 +172,7 @@ public class Potion extends Module {
                 AnimData anim = animationMap.get(effect.getPotionID());
                 if (anim != null) totalHeight += rowHeight * anim.progress;
             }
-        } else if (modeVal == 2) { // Bar
+        } else if (modeVal == 2) {
             int progressBarWidth = 100;
             int nameWidth = 0;
             for (PotionEffect effect : renderList) {
@@ -197,7 +192,6 @@ public class Potion extends Module {
         return new float[]{totalWidth, totalHeight};
     }
 
-    // 拖拽处理函数
     private void applyDragging(float areaWidth, float areaHeight, int[] pos) {
         if (!(mc.currentScreen instanceof GuiChat)) {
             dragging = false;
@@ -262,13 +256,11 @@ public class Potion extends Module {
         int baseX = postx.getValue();
         int baseY = posty.getValue();
 
-        // 计算当前模式下的渲染区域尺寸
         int modeVal = mode.getValue();
         float[] areaSize = calculateAreaSize(renderList, modeVal);
         float areaWidth = areaSize[0];
         float areaHeight = areaSize[1];
 
-        // 拖拽处理，可能更新 baseX, baseY
         int[] pos = {baseX, baseY};
         if (areaWidth > 0 && areaHeight > 0) {
             applyDragging(areaWidth, areaHeight, pos);
@@ -284,10 +276,6 @@ public class Potion extends Module {
             renderBarMode(renderList, hud, baseX, baseY);
         }
     }
-
-    // 以下三个渲染方法保持原样，只是参数 baseX, baseY 使用传入的值
-    // 注意：这三个方法内部使用了 postx/posty 吗？没有，它们直接用传入的 baseX, baseY。
-    // 所以拖拽后新的 baseX, baseY 会直接影响渲染位置。
 
     private void renderCircleMode(List<PotionEffect> renderList, HUD hud, int baseX, int baseY) {
         int offsetX = 21;
