@@ -18,6 +18,7 @@ import unfair.module.modules.render.GuiModule
 import unfair.module.modules.render.HUD
 import unfair.ui.clickgui.oldgui.components.BindComponent
 import unfair.ui.clickgui.oldgui.components.CategoryComponent
+import unfair.ui.clickgui.oldgui.components.ConfigCategoryComponent
 import unfair.ui.clickgui.oldgui.components.ModuleComponent
 import unfair.util.Timer
 import unfair.util.shader.BlurUtils
@@ -58,10 +59,14 @@ class ClickGui : GuiScreen() {
 
         for (i in values.indices) {
             val c = values[i]
-            val categoryComponent = CategoryComponent(
-                c.displayName!!,
-                Objects.requireNonNull<ModuleManager>(Unfair.moduleManager).getModulesByCategory(c)
-            )
+            val categoryComponent = if (c == Category.CONFIG) {
+                ConfigCategoryComponent(c.displayName!!)
+            } else {
+                CategoryComponent(
+                    c.displayName!!,
+                    Objects.requireNonNull<ModuleManager>(Unfair.moduleManager).getModulesByCategory(c)
+                )
+            }
             categoryComponent.setY(y, false)
             categories.add(categoryComponent)
             y += 20
@@ -247,6 +252,9 @@ class ClickGui : GuiScreen() {
                         category.openModule(component)
                     }
                 }
+            }
+            if (category is ConfigCategoryComponent && category.isOpened) {
+                category.mouseClicked(mouseX, mouseY, mouseButton)
             }
         }
     }

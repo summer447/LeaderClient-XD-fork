@@ -41,14 +41,14 @@ public class CategoryComponent {
     public ScaledResolution scale;
     public float big;
     public int moduleY;
-    private Timer textTimer;
-    private float bigSettings;
-    private float lastHeight;
-    private int lastModuleY;
-    private int screenHeight;
-    private boolean scrolled;
-    private int targetModuleY;
-    private float closedHeight;
+    protected Timer textTimer;
+    protected float bigSettings;
+    protected float lastHeight;
+    protected int lastModuleY;
+    protected int screenHeight;
+    protected boolean scrolled;
+    protected int targetModuleY;
+    protected float closedHeight;
 
     public CategoryComponent(String categoryName, List<Module> modules) {
         this.categoryName = categoryName;
@@ -150,21 +150,7 @@ public class CategoryComponent {
         }
 
         this.width = 92;
-        int modulesHeight = 0;
-        int settingsHeight = 0;
-        if (!this.modules.isEmpty() && this.opened) {
-            for (ModuleComponent c : this.modules) {
-                settingsHeight += c.getHeight();
-                int height = !c.isOpened ? 16 : c.getModuleHeight();
-                if (modulesHeight + height > this.screenHeight * 0.9d) {
-                    modulesHeight = (int) (this.screenHeight * 0.9d);
-                    continue;
-                }
-                modulesHeight += c.getHeight();
-            }
-            big = modulesHeight;
-            bigSettings = settingsHeight;
-        }
+        int modulesHeight = computeContentHeight();
 
         float middlePos = (float) (this.x + this.width / 2 - Minecraft.getMinecraft().fontRendererObj.getStringWidth(this.categoryName) / 2);
         float xPos = opened ? middlePos : this.x + 12;
@@ -219,14 +205,37 @@ public class CategoryComponent {
         int prevY = this.y;
         this.y = this.moduleY;
 
+        renderContent();
+        this.y = prevY;
+        GL11.glDisable(GL11.GL_SCISSOR_TEST);
+        GL11.glPopMatrix();
+    }
+
+    protected int computeContentHeight() {
+        int modulesHeight = 0;
+        int settingsHeight = 0;
+        if (!this.modules.isEmpty() && this.opened) {
+            for (ModuleComponent c : this.modules) {
+                settingsHeight += c.getHeight();
+                int height = !c.isOpened ? 16 : c.getModuleHeight();
+                if (modulesHeight + height > this.screenHeight * 0.9d) {
+                    modulesHeight = (int) (this.screenHeight * 0.9d);
+                    continue;
+                }
+                modulesHeight += c.getHeight();
+            }
+            big = modulesHeight;
+            bigSettings = settingsHeight;
+        }
+        return modulesHeight;
+    }
+
+    protected void renderContent() {
         if (this.opened || smoothTimer != null) {
             for (Component c2 : this.modules) {
                 c2.render();
             }
         }
-        this.y = prevY;
-        GL11.glDisable(GL11.GL_SCISSOR_TEST);
-        GL11.glPopMatrix();
     }
 
     public void updateHeight() {
@@ -328,6 +337,9 @@ public class CategoryComponent {
                 break;
             case "misc":
                 itemStack = new ItemStack(Items.clock);
+                break;
+            case "config":
+                itemStack = new ItemStack(Items.paper);
                 break;
         }
         if (itemStack != null) {
