@@ -3,7 +3,6 @@ package unfair.util.shader
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.ScaledResolution
 import net.minecraft.client.renderer.GlStateManager
-import net.minecraft.client.renderer.OpenGlHelper
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL20
 import unfair.util.RenderUtil
@@ -340,47 +339,7 @@ object RoundedUtils {
         roundedTexturedShader!!.setUniformi("textureIn", 0)
         setupRoundedRectUniforms(x, y, width, height, radius, roundedTexturedShader!!)
         roundedTexturedShader!!.setUniformf("alpha", alpha)
-        roundedTexturedShader!!.setUniformf("uvOffset", 0f, 0f)
-        roundedTexturedShader!!.setUniformf("uvSize", 1f, 1f)
         drawQuads(x - 1, y - 1, width + 2, height + 2)
-        roundedTexturedShader!!.unload()
-        GlStateManager.disableBlend()
-    }
-
-    @JvmStatic
-    fun drawRoundTexturedUV(
-        x: Float, y: Float, width: Float, height: Float, radius: Float, alpha: Float,
-        textureId: Int,
-        u: Float, v: Float, uSize: Float, vSize: Float
-    ) {
-        initShaders()
-        if (roundedTexturedShader == null) return
-
-        RenderUtil.resetColor()
-        RenderUtil.setAlphaLimit(0f)
-        GlStateManager.enableBlend()
-        GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA)
-        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit)
-        GlStateManager.enableTexture2D()
-        GlStateManager.bindTexture(textureId)
-        roundedTexturedShader!!.init()
-        roundedTexturedShader!!.setUniformi("textureIn", 0)
-        setupRoundedRectUniforms(x, y, width, height, radius, roundedTexturedShader!!)
-        roundedTexturedShader!!.setUniformf("alpha", alpha)
-        roundedTexturedShader!!.setUniformf("uvOffset", u, v)
-        roundedTexturedShader!!.setUniformf("uvSize", uSize, vSize)
-
-        GL11.glBegin(GL11.GL_QUADS)
-        GL11.glTexCoord2f(u, v)
-        GL11.glVertex2f(x - 1, y - 1)
-        GL11.glTexCoord2f(u, v + vSize)
-        GL11.glVertex2f(x - 1, y - 1 + height + 2)
-        GL11.glTexCoord2f(u + uSize, v + vSize)
-        GL11.glVertex2f(x - 1 + width + 2, y - 1 + height + 2)
-        GL11.glTexCoord2f(u + uSize, v)
-        GL11.glVertex2f(x - 1 + width + 2, y - 1)
-        GL11.glEnd()
-
         roundedTexturedShader!!.unload()
         GlStateManager.disableBlend()
     }

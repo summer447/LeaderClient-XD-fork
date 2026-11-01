@@ -46,7 +46,6 @@ public class DynamicIsland extends Module {
     private final BooleanProperty moduleToggle = new BooleanProperty("Module Toggle", true);
     private final BooleanProperty containerPreview = new BooleanProperty("Container Preview", true);
     private final BooleanProperty tab = new BooleanProperty("Tab Preview", true);
-    private final BooleanProperty playerAvatar = new BooleanProperty("Player Avatar", true, tab::getValue);
     private final BooleanProperty blur = new BooleanProperty("Blur", true);
     private final BooleanProperty bloom = new BooleanProperty("Bloom", true);
 
@@ -265,10 +264,7 @@ public class DynamicIsland extends Module {
             final int rowsPerColumn = 15;
             final int columnCount = Math.max(1, (players.size() + rowsPerColumn - 1) / rowsPerColumn);
             final int displayRows = Math.min(players.size(), rowsPerColumn);
-            final boolean showAvatar = this.playerAvatar.getValue();
-            final float rowHeight = showAvatar ? 16f : 14f;
-            final float headSize = 12f;
-            final float headGap = 5f;
+            final float rowHeight = 14f;
             final float headerHeight = 18f;
             final float paddingX = 8f;
             final float columnGap = 12f;
@@ -286,8 +282,7 @@ public class DynamicIsland extends Module {
                     String name = info.getGameProfile() != null ? info.getGameProfile().getName() : "";
                     maxNameWidth = Math.max(maxNameWidth, descFont.getStringWidth(name));
                 }
-                float headReserve = showAvatar ? headSize + headGap : 0f;
-                columnWidths[c] = Math.max(140f, paddingX * 2 + headReserve + maxNameWidth + pingWidth + 10f);
+                columnWidths[c] = Math.max(140f, paddingX * 2 + maxNameWidth + pingWidth + 10f);
                 totalWidth += columnWidths[c];
                 if (c > 0) totalWidth += columnGap;
             }
@@ -314,36 +309,15 @@ public class DynamicIsland extends Module {
                         int ping = info.getResponseTime();
                         int rowInCol = i - start;
                         float rowY = headerHeight + rowInCol * rowHeight;
-                        float headX = columnX + paddingX;
-                        float headY = rowY + (rowHeight - headSize) / 2f - 1.5f;
-                        float nameX = showAvatar ? headX + headSize + headGap : columnX + paddingX;
 
                         if (rowInCol % 2 == 0) {
                             RoundedUtils.drawRound(columnX + paddingX - 2, rowY - 1, colW - paddingX * 2 + 4, rowHeight - 2, 3f, new Color(255, 255, 255, 12));
                         }
 
-                        if (showAvatar) {
-                            net.minecraft.util.ResourceLocation skin = info.getLocationSkin();
-                            if (skin != null) {
-                                net.minecraft.client.renderer.texture.ITextureObject texObj = mc.getTextureManager().getTexture(skin);
-                                if (texObj != null) {
-                                    int texId = texObj.getGlTextureId();
-                                    final float avatarRadius = 5f;
-                                    final float faceU = 8f / 64f;
-                                    final float faceV = 8f / 64f;
-                                    final float faceSize = 8f / 64f;
-                                    GlStateManager.color(1f, 1f, 1f, 1f);
-                                    RoundedUtils.drawRoundTexturedUV(headX, headY, headSize, headSize, avatarRadius, 1f, texId, faceU, faceV, faceSize, faceSize);
-                                    RoundedUtils.drawRoundTexturedUV(headX, headY, headSize, headSize, avatarRadius, 1f, texId, 40f / 64f, faceV, faceSize, faceSize);
-                                    GlStateManager.color(1f, 1f, 1f, 1f);
-                                }
-                            }
-                        }
-
                         int nameColor = mc.thePlayer != null && info.getGameProfile() != null
                                 && info.getGameProfile().getId().equals(mc.thePlayer.getUniqueID())
                                 ? new Color(120, 200, 255).getRGB() : -1;
-                        descFont.drawString(name, nameX, rowY + (rowHeight - descFont.getHeight()) / 2f - 1.5f, nameColor);
+                        descFont.drawString(name, columnX + paddingX, rowY + (rowHeight - descFont.getHeight()) / 2f, nameColor);
 
                         String pingStr = ping <= 0 ? "..." : ping + "ms";
                         int pingColor;
@@ -356,7 +330,7 @@ public class DynamicIsland extends Module {
                         } else {
                             pingColor = new Color(220, 120, 120).getRGB();
                         }
-                        descFont.drawString(pingStr, columnX + colW - paddingX - descFont.getStringWidth(pingStr), rowY + (rowHeight - descFont.getHeight()) / 2f - 1.5f, pingColor);
+                        descFont.drawString(pingStr, columnX + colW - paddingX - descFont.getStringWidth(pingStr), rowY + (rowHeight - descFont.getHeight()) / 2f, pingColor);
                     }
                     columnX += colW + columnGap;
                 }
